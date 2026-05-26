@@ -5,6 +5,6 @@ export async function toQrDataUrl(text: string): Promise<string> {
     errorCorrectionLevel: "M",
     margin: 1,
     width: 480,
-    color: { dark: "#2A2620", light: "#FAF7F2" },
+    color: { dark: "#2A1F12", light: "#F5EEDC" },
   });
 }

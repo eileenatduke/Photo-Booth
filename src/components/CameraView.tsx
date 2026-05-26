@@ -219,8 +219,8 @@ export function CameraView() {
           title="Camera trouble"
           onBack={() => setStep("background")}
         />
-        <div className="card p-8 max-w-lg">
-          <p className="text-ink leading-relaxed">{error}</p>
+        <div className="card-bordered p-8 max-w-lg">
+          <p className="font-body italic text-xl leading-relaxed">{error}</p>
           <p className="text-muted text-sm mt-3">
             Make sure no other app is using the webcam, then refresh.
           </p>
@@ -238,16 +238,17 @@ export function CameraView() {
           phase === "ready"
             ? isRetake
               ? `Retake ${totalThisRound === 1 ? "this shot" : `${totalThisRound} shots`}`
-              : "Ready when you are"
+              : "Mind the countdown"
             : phase === "done"
-              ? "All done!"
+              ? "And that's a wrap."
               : `Shot ${stepIdx + 1} of ${totalThisRound}`
         }
         subtitle={
           isRetake
-            ? "Only the selected slots will be retaken."
-            : "We'll take them one at a time."
+            ? "Only the slots you queued will be retaken."
+            : "Three, two, one — then the flash. Hold the pose."
         }
+        ornament="✦"
         onBack={
           phase === "ready"
             ? () => {
@@ -259,38 +260,40 @@ export function CameraView() {
       />
 
       <div className="flex-1 px-10 pb-10 flex items-stretch justify-center gap-8">
-        <div className="relative rounded-3xl overflow-hidden bg-ink shadow-lift max-h-full aspect-video flex-1 max-w-4xl">
-          <video
-            ref={videoRef}
-            className="hidden"
-            muted
-            playsInline
-          />
-          <canvas
-            ref={previewCanvasRef}
-            className="w-full h-full object-cover"
-          />
-          <CountdownOverlay value={countdownValue} />
-          {phase === "preview" && lastShotUrl && (
-            <div className="absolute inset-0 bg-ink/80 flex items-center justify-center">
-              <img
-                src={lastShotUrl}
-                alt={`Shot ${stepIdx + 1}`}
-                className="max-h-[80%] max-w-[80%] rounded-2xl shadow-lift fade-in"
-              />
-            </div>
-          )}
+        <div className="relative flex-1 max-w-5xl">
+          <div className="relative rounded-2xl overflow-hidden bg-ink shadow-lift aspect-video border-4 border-ink">
+            <video ref={videoRef} className="hidden" muted playsInline />
+            <canvas
+              ref={previewCanvasRef}
+              className="w-full h-full object-cover"
+            />
+            <CountdownOverlay value={countdownValue} />
+            {phase === "preview" && lastShotUrl && (
+              <div className="absolute inset-0 bg-ink/85 flex items-center justify-center">
+                <div className="bg-paper p-3 pb-8 shadow-lift rotate-[-1.5deg] fade-in">
+                  <img
+                    src={lastShotUrl}
+                    alt={`Shot ${stepIdx + 1}`}
+                    className="max-h-[55vh] max-w-[55vw] block"
+                  />
+                  <p className="font-body italic text-center text-ink mt-2">
+                    Shot {stepIdx + 1}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          <p className="smallcaps mt-3 text-center">
+            Live view · mirrored for your comfort
+          </p>
         </div>
 
-        <aside className="w-64 flex flex-col gap-4">
-          <div className="card p-5">
-            <p className="text-xs uppercase tracking-widest text-muted mb-2">
-              Layout
-            </p>
-            <p className="font-serif text-xl">{layout?.name}</p>
-            <p className="text-xs text-muted mt-1">
-              {totalThisRound}{" "}
-              {totalThisRound === 1 ? "shot" : "shots"} this round
+        <aside className="w-72 flex flex-col gap-4">
+          <div className="card-bordered p-5">
+            <p className="smallcaps mb-2">The format</p>
+            <p className="font-serif text-2xl">{layout?.name}</p>
+            <p className="font-body italic text-ink-soft mt-1">
+              {totalThisRound} {totalThisRound === 1 ? "shot" : "shots"} this round
             </p>
           </div>
           <ProgressList
@@ -305,7 +308,7 @@ export function CameraView() {
               className="btn-primary w-full mt-auto"
               onClick={runCaptureSequence}
             >
-              {isRetake ? "Retake" : "Start"}
+              {isRetake ? "Begin retake" : "Start the sitting"}
             </button>
           )}
         </aside>
@@ -328,10 +331,8 @@ function ProgressList({
   existing: CapturedShot[];
 }) {
   return (
-    <div className="card p-5">
-      <p className="text-xs uppercase tracking-widest text-muted mb-3">
-        Shots
-      </p>
+    <div className="card-bordered p-5">
+      <p className="smallcaps mb-3">Shots</p>
       <ul className="space-y-2">
         {indices.map((slot, i) => {
           const done = captured.has(slot) || (phase === "ready" && existing[slot]);
@@ -342,17 +343,22 @@ function ProgressList({
             <li key={slot} className="flex items-center gap-3 text-sm">
               <span
                 className={
-                  "h-6 w-6 rounded-full grid place-items-center text-xs font-medium " +
+                  "h-7 w-7 rounded-full grid place-items-center font-serif " +
                   (done
-                    ? "bg-accent text-cream"
+                    ? "bg-burnt text-paper"
                     : isCurrent
-                      ? "bg-ink text-cream"
-                      : "bg-hairline text-muted")
+                      ? "bg-ink text-paper"
+                      : "border border-hairline text-muted")
                 }
               >
                 {slot + 1}
               </span>
-              <span className={done ? "text-ink" : "text-muted"}>
+              <span
+                className={
+                  "font-body italic " +
+                  (done ? "text-ink" : "text-muted")
+                }
+              >
                 {done ? "Captured" : isCurrent ? "In progress…" : "Pending"}
               </span>
             </li>

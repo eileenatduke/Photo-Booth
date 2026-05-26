@@ -83,60 +83,68 @@ export function OutputScreen() {
   return (
     <div className="min-h-full flex flex-col">
       <StepHeader
-        title="Your photo is ready"
-        subtitle="Save it, or scan the code to grab it on your phone."
+        title="The print is ready"
+        subtitle="Save it as a file, or scan the cipher to send it to your telephone."
+        ornament="✦"
       />
       <div className="px-10 pb-10 flex-1 flex gap-8 items-stretch">
         <div className="flex-1 flex items-center justify-center">
           {filteredDataUrl && (
-            <img
-              src={filteredDataUrl}
-              alt="Final"
-              className="max-h-[70vh] max-w-full rounded-lg shadow-lift fade-in"
-            />
+            <div className="relative bg-paper p-5 shadow-lift rotate-[-0.4deg]">
+              <img
+                src={filteredDataUrl}
+                alt="Final"
+                className="max-h-[68vh] max-w-full block fade-in"
+              />
+              <p className="font-body italic text-center text-ink-soft mt-3">
+                — finis —
+              </p>
+            </div>
           )}
         </div>
         <aside className="w-80 flex flex-col gap-4">
-          <div className="card p-5 text-center">
-            <p className="text-xs uppercase tracking-widest text-muted mb-3">
-              Send to your phone
-            </p>
-            <div className="aspect-square w-full bg-white rounded-xl flex items-center justify-center overflow-hidden">
+          <div className="card-bordered p-5 text-center">
+            <p className="smallcaps mb-3">By Wireless</p>
+            <div className="aspect-square w-full bg-paper rounded flex items-center justify-center overflow-hidden border border-hairline">
               {qrDataUrl ? (
                 <img src={qrDataUrl} alt="QR code" className="w-full h-full" />
               ) : serverError ? (
-                <p className="text-xs text-accent px-4">{serverError}</p>
+                <p className="text-xs text-burnt px-4 italic">{serverError}</p>
               ) : (
-                <p className="text-xs text-muted">Starting server…</p>
+                <p className="font-body italic text-muted">Preparing cipher…</p>
               )}
             </div>
             {qrUrl && (
               <>
                 <button
-                  className="text-xs text-muted hover:text-ink underline mt-3 break-all"
+                  className="text-[11px] text-muted hover:text-ink mt-3 break-all font-mono"
                   onClick={handleCopyUrl}
                   title="Copy link"
                 >
                   {qrUrl}
                 </button>
-                <p className="text-xs text-muted mt-2">
-                  Phone must be on the same Wi-Fi network.
+                <p className="text-xs text-muted italic mt-2">
+                  Same Wi-Fi network as this machine.
                 </p>
               </>
             )}
           </div>
 
           <button className="btn-primary" onClick={handleDownload}>
-            Download PNG
+            Save as PNG
           </button>
           {downloadError && (
-            <p className="text-xs text-accent text-center">{downloadError}</p>
+            <p className="text-xs text-burnt text-center italic">
+              {downloadError}
+            </p>
           )}
           {status && (
-            <p className="text-xs text-muted text-center">{status}</p>
+            <p className="text-xs text-sage-deep text-center italic">
+              {status}
+            </p>
           )}
           <button className="btn-secondary mt-auto" onClick={handleNew}>
-            Start new session
+            Begin a new sitting
           </button>
         </aside>
       </div>

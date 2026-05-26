@@ -59,25 +59,30 @@ export function ReviewScreen() {
   return (
     <div className="min-h-full flex flex-col">
       <StepHeader
-        title="Here's the strip"
-        subtitle="Tap any shot to mark it for a retake — each shot gets up to two tries."
+        title="The proofs"
+        subtitle="Tap any frame you'd like to retake — each one allows up to two tries."
+        ornament="❋"
       />
       <div className="px-10 pb-10 flex-1 flex items-stretch gap-8">
         <div className="flex-1 flex items-center justify-center">
-          {busy && <p className="text-muted">Composing your photo…</p>}
+          {busy && (
+            <p className="font-body italic text-ink-soft text-lg">
+              Composing your photograph…
+            </p>
+          )}
           {!busy && composedDataUrl && (
-            <img
-              src={composedDataUrl}
-              alt="Composed result"
-              className="max-h-[70vh] max-w-full rounded-lg shadow-lift fade-in"
-            />
+            <div className="relative bg-paper p-4 shadow-lift rotate-[-0.6deg]">
+              <img
+                src={composedDataUrl}
+                alt="Composed result"
+                className="max-h-[68vh] max-w-full block fade-in"
+              />
+            </div>
           )}
         </div>
         <aside className="w-80 flex flex-col gap-4">
-          <div className="card p-5">
-            <p className="text-xs uppercase tracking-widest text-muted mb-3">
-              Your shots
-            </p>
+          <div className="card-bordered p-5">
+            <p className="smallcaps mb-3">Your shots</p>
             <ul className="space-y-2">
               {shots.map((shot, i) => {
                 const retakes = shotRetakes[i] ?? 0;
@@ -90,15 +95,15 @@ export function ReviewScreen() {
                       disabled={maxed}
                       onClick={() => toggleRetakeIndex(i)}
                       className={
-                        "w-full flex items-center gap-3 p-2 rounded-xl border transition-all text-left " +
+                        "w-full flex items-center gap-3 p-2 rounded-xl border-2 transition-all text-left " +
                         (queued
-                          ? "border-accent bg-white shadow-soft"
+                          ? "border-burnt bg-paper shadow-soft"
                           : maxed
-                            ? "border-hairline bg-white/30 opacity-60 cursor-not-allowed"
-                            : "border-hairline bg-white/60 hover:bg-white")
+                            ? "border-hairline bg-paper/40 opacity-60 cursor-not-allowed"
+                            : "border-hairline bg-paper/70 hover:bg-paper")
                       }
                     >
-                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-hairline flex-shrink-0">
+                      <div className="w-14 h-14 rounded overflow-hidden bg-hairline flex-shrink-0 border border-hairline">
                         <img
                           src={shot.dataUrl}
                           alt={`Shot ${i + 1}`}
@@ -106,23 +111,23 @@ export function ReviewScreen() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
+                        <p className="font-serif text-lg leading-tight">
                           Shot {i + 1}
                         </p>
-                        <p className="text-xs text-muted">
+                        <p className="text-xs text-muted italic font-body">
                           {maxed
                             ? "No retakes left"
                             : queued
-                              ? "Queued"
+                              ? "Queued for retake"
                               : `${left} retake${left === 1 ? "" : "s"} left`}
                         </p>
                       </div>
                       <span
                         className={
-                          "h-5 w-5 rounded-full border flex items-center justify-center text-[10px] " +
+                          "h-6 w-6 rounded-full border-2 flex items-center justify-center text-xs " +
                           (queued
-                            ? "bg-accent border-accent text-cream"
-                            : "border-hairline bg-white")
+                            ? "bg-burnt border-burnt text-paper"
+                            : "border-hairline bg-paper")
                         }
                       >
                         {queued ? "✓" : ""}
@@ -149,10 +154,10 @@ export function ReviewScreen() {
             }}
             disabled={busy || !composedDataUrl}
           >
-            Continue →
+            To the darkroom →
           </button>
           {layout && (
-            <p className="text-xs text-muted text-center">
+            <p className="font-body italic text-muted text-center">
               {layout.name} · {shots.length}{" "}
               {shots.length === 1 ? "shot" : "shots"}
             </p>

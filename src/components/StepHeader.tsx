@@ -1,5 +1,6 @@
 import { useSession } from "../state/session";
 import type { Step } from "../types";
+import { MastheadRule } from "./Ornaments";
 
 const ORDER: Step[] = [
   "layout",
@@ -13,49 +14,83 @@ const ORDER: Step[] = [
 const LABEL: Record<Step, string> = {
   welcome: "Welcome",
   layout: "Layout",
-  background: "Background",
-  camera: "Camera",
-  capturing: "Camera",
+  background: "Backdrop",
+  camera: "Capture",
+  capturing: "Capture",
   review: "Review",
-  filter: "Filter",
-  output: "Send",
+  filter: "Develop",
+  output: "Print",
 };
+
+const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
 type Props = {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  ornament?: string;
 };
 
-export function StepHeader({ title, subtitle, onBack }: Props) {
+export function StepHeader({ title, subtitle, onBack, ornament }: Props) {
   const step = useSession((s) => s.step);
   const idx = ORDER.indexOf(step === "capturing" ? "camera" : step);
+
   return (
-    <header className="px-10 pt-8 pb-4">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-muted mb-6">
+    <header className="px-10 pt-8 pb-5">
+      <MastheadRule />
+      <div className="flex items-center justify-between py-3">
         <button
-          className="hover:text-ink transition-colors"
+          className="text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors disabled:opacity-0"
           onClick={onBack}
           disabled={!onBack}
         >
-          {onBack ? "← Back" : ""}
+          ← Back
         </button>
-        <div className="flex items-center gap-2">
-          {ORDER.map((s, i) => (
-            <span
-              key={s}
-              className={
-                i <= idx
-                  ? "h-px w-8 bg-ink transition-all"
-                  : "h-px w-8 bg-hairline transition-all"
-              }
-            />
-          ))}
+        <div className="flex items-center gap-3">
+          {ORDER.map((s, i) => {
+            const active = i <= idx;
+            return (
+              <div
+                key={s}
+                className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em]"
+              >
+                <span
+                  className={
+                    "font-serif text-xs " +
+                    (active ? "text-burnt" : "text-hairline")
+                  }
+                >
+                  {ROMAN[i]}
+                </span>
+                <span className={active ? "text-ink" : "text-hairline"}>
+                  {LABEL[s]}
+                </span>
+                {i < ORDER.length - 1 && (
+                  <span className="text-hairline mx-1">·</span>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <span>{LABEL[step]}</span>
+        <span className="text-[11px] uppercase tracking-[0.28em] text-muted">
+          № {ROMAN[idx] || "—"}
+        </span>
       </div>
-      <h2 className="heading-display text-4xl">{title}</h2>
-      {subtitle && <p className="text-muted mt-2">{subtitle}</p>}
+      <MastheadRule />
+
+      <div className="flex items-end justify-between mt-6 gap-6">
+        <div>
+          <h2 className="heading-display text-5xl">{title}</h2>
+          {subtitle && (
+            <p className="mt-2 font-body italic text-ink-soft text-lg max-w-2xl">
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {ornament && (
+          <span className="ornament text-3xl select-none">{ornament}</span>
+        )}
+      </div>
     </header>
   );
 }

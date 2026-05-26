@@ -82,7 +82,7 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
     id: "cream",
     name: "Cream",
     paint: (ctx, w, h) => {
-      ctx.fillStyle = "#FAF7F2";
+      ctx.fillStyle = "#F5EEDC";
       ctx.fillRect(0, 0, w, h);
     },
   },
@@ -125,7 +125,7 @@ export function renderPresetToCanvas(
   if (!ctx) return canvas;
   const preset = BACKGROUND_PRESETS.find((p) => p.id === id);
   if (!preset) {
-    ctx.fillStyle = "#FAF7F2";
+    ctx.fillStyle = "#F5EEDC";
     ctx.fillRect(0, 0, w, h);
     return canvas;
   }

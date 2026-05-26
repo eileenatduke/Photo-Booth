@@ -14,6 +14,30 @@
   src: url("/fonts/dm-serif-display.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/dm-serif-display-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/cormorant.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/cormorant-italic.woff2") format("woff2");
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,6 +77,12 @@
   }
 }
 
+@keyframes slowSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -65,43 +95,121 @@
   body {
     @apply bg-cream text-ink font-sans antialiased;
     margin: 0;
+    background-image:
+      radial-gradient(
+        circle at 12% 18%,
+        rgba(184, 90, 44, 0.05),
+        transparent 45%
+      ),
+      radial-gradient(
+        circle at 88% 80%,
+        rgba(122, 139, 110, 0.06),
+        transparent 45%
+      );
+    background-attachment: fixed;
   }
 }
 
 @layer components {
+  /* ---------- Buttons ---------- */
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full
            text-sm font-medium tracking-wide transition-all duration-200
-           ease-cinema border border-transparent select-none;
+           ease-cinema border select-none;
   }
   .btn-primary {
-    @apply btn bg-accent text-cream shadow-soft hover:bg-[#B25F35]
+    @apply btn bg-burnt text-paper border-burnt shadow-soft
+           hover:bg-[#A04E25] hover:border-[#A04E25]
            active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply btn bg-transparent text-ink border-hairline hover:bg-white/60
+    @apply btn bg-paper text-ink border-hairline hover:bg-white
            active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-ghost {
-    @apply btn bg-transparent text-muted hover:text-ink
+    @apply btn bg-transparent text-muted border-transparent hover:text-ink
            active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
+
+  /* ---------- Typography ---------- */
   .heading-display {
-    @apply font-serif text-ink;
+    @apply font-serif text-ink leading-[1.05];
   }
+  .heading-script {
+    @apply font-serif italic text-ink leading-[1.05];
+  }
+  .smallcaps {
+    @apply text-[10px] uppercase tracking-[0.32em] text-muted;
+    font-feature-settings: "smcp";
+  }
+  .ornament {
+    @apply text-burnt font-serif select-none;
+  }
+
+  /* ---------- Surfaces ---------- */
   .card {
-    @apply bg-white/70 border border-hairline rounded-2xl shadow-soft;
+    @apply bg-paper border border-hairline rounded-2xl shadow-soft;
   }
+  .card-bordered {
+    @apply bg-paper rounded-lg shadow-soft;
+    border: 1px double theme("colors.hairline");
+    position: relative;
+  }
+  .card-bordered::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid theme("colors.hairline-soft");
+    border-radius: 6px;
+    pointer-events: none;
+  }
+  .magazine-rule {
+    @apply h-px bg-ink;
+  }
+  .magazine-rule-double {
+    border-top: 1px solid theme("colors.ink");
+    border-bottom: 1px solid theme("colors.ink");
+    height: 4px;
+  }
+
+  /* ---------- Decorative ---------- */
+  .stamp {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full
+           border border-burnt/40 text-burnt text-[10px] uppercase
+           tracking-[0.28em] bg-burnt/[0.04];
+  }
+  .seal {
+    @apply relative inline-grid place-items-center w-20 h-20 rounded-full
+           border-2 border-double border-burnt text-burnt;
+  }
+
+  /* ---------- Effects ---------- */
   .fade-in {
     animation: fadeIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .grain {
+    position: relative;
   }
   .grain::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.06;
+    opacity: 0.08;
     mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .halftone {
+    background-image: radial-gradient(
+      theme("colors.ink/15") 1px,
+      transparent 1.4px
+    );
+    background-size: 8px 8px;
+  }
+  .scallop-edge {
+    --c: theme("colors.cream");
+    background:
+      radial-gradient(circle at 8px 0, transparent 7px, var(--c) 7.5px) 0 0/16px
+        8px repeat-x;
   }
 }

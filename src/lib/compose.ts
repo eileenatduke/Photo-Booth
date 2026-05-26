@@ -106,7 +106,7 @@ function drawClassicStrip(
     const y = pad + i * (slotH + gap);
     drawCover(ctx, img, pad, y, innerW, slotH);
   });
-  ctx.fillStyle = "#2A2620";
+  ctx.fillStyle = "#2A1F12";
   ctx.font = `italic 500 ${Math.round(caption * 0.34)}px 'DM Serif Display', Georgia, serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -119,7 +119,7 @@ function drawGrid2x2(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   ctx.fillRect(0, 0, W, H);
   const pad = Math.round(W * 0.04);
   const gap = Math.round(W * 0.015);
@@ -143,13 +143,13 @@ function drawPolaroid(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   ctx.fillRect(0, 0, W, H);
   const borderX = Math.round(W * 0.08);
   const borderTop = Math.round(W * 0.08);
   const photoSize = W - borderX * 2;
   drawCover(ctx, imgs[0], borderX, borderTop, photoSize, photoSize);
-  ctx.fillStyle = "#2A2620";
+  ctx.fillStyle = "#2A1F12";
   ctx.font = `400 ${Math.round(W * 0.05)}px 'DM Serif Display', Georgia, serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -163,7 +163,7 @@ function drawFilmStrip(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = "#111111";
+  ctx.fillStyle = "#1B130A";
   ctx.fillRect(0, 0, W, H);
   const sprocket = Math.round(H * 0.13);
   const padX = Math.round(W * 0.02);
@@ -174,7 +174,7 @@ function drawFilmStrip(
   imgs.forEach((img, i) => {
     drawCover(ctx, img, padX + i * (slotW + gap), photoY, slotW, photoH);
   });
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   const holeR = sprocket * 0.28;
   const holeY1 = sprocket / 2;
   const holeY2 = H - sprocket / 2;
@@ -202,7 +202,7 @@ function drawMagazine(
   grad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, Math.round(H * 0.22));
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   ctx.font = `400 ${Math.round(W * 0.14)}px 'DM Serif Display', Georgia, serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
@@ -216,9 +216,9 @@ function drawMagazine(
   const barY = H - Math.round(H * 0.08);
   const barW = Math.round(W * 0.18);
   const barH = Math.round(H * 0.04);
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   ctx.fillRect(barX - 6, barY - 6, barW + 12, barH + 12);
-  ctx.fillStyle = "#111111";
+  ctx.fillStyle = "#1B130A";
   let bx = barX;
   while (bx < barX + barW) {
     const wd = 1 + Math.floor(Math.random() * 4);
@@ -233,7 +233,7 @@ function drawComic(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = "#FAF7F2";
+  ctx.fillStyle = "#F5EEDC";
   ctx.fillRect(0, 0, W, H);
   const border = Math.round(W * 0.018);
   const outer = Math.round(W * 0.04);
@@ -253,7 +253,7 @@ function drawComic(
     ctx.clip();
     drawCover(ctx, imgs[i], x, y, cellW, cellH);
     ctx.restore();
-    ctx.strokeStyle = "#111111";
+    ctx.strokeStyle = "#1B130A";
     ctx.lineWidth = border;
     roundRect(ctx, x, y, cellW, cellH, 8);
     ctx.stroke();

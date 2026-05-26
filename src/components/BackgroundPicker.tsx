@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
 import { BACKGROUND_PRESETS, renderPresetThumb } from "../lib/backgrounds";
 import { StepHeader } from "./StepHeader";
+import { Divider } from "./Ornaments";
 
 export function BackgroundPicker() {
   const { bgMode, bgSource, setBgMode, setBgSource, setStep } = useSession(
@@ -18,7 +19,11 @@ export function BackgroundPicker() {
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const thumbs = useMemo(
-    () => BACKGROUND_PRESETS.map((p) => ({ ...p, thumb: renderPresetThumb(p.id) })),
+    () =>
+      BACKGROUND_PRESETS.map((p) => ({
+        ...p,
+        thumb: renderPresetThumb(p.id),
+      })),
     [],
   );
 
@@ -49,26 +54,36 @@ export function BackgroundPicker() {
   return (
     <div className="min-h-full flex flex-col">
       <StepHeader
-        title="Pick your backdrop"
-        subtitle="Use the room around you, or swap it for something else."
+        title="The backdrop"
+        subtitle="Keep the room you're in, or step somewhere else entirely."
         onBack={() => setStep("layout")}
+        ornament="✦"
       />
-      <div className="px-10 flex gap-4 mb-6">
-        <ModeChip
+
+      <div className="px-10 grid grid-cols-2 gap-4 my-4">
+        <ModeCard
           active={bgMode === "real"}
-          label="Use my real background"
+          title="Use the room"
+          tagline="Your real background, untouched."
+          glyph="❖"
           onClick={() => setBgMode("real")}
         />
-        <ModeChip
+        <ModeCard
           active={bgMode === "replace"}
-          label="Replace background"
+          title="Step elsewhere"
+          tagline="A new backdrop, drawn around your silhouette."
+          glyph="❀"
           onClick={() => setBgMode("replace")}
         />
       </div>
 
       {bgMode === "replace" && (
         <div className="px-10 pb-8 flex-1">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          <div className="my-6">
+            <Divider glyph="❋" tone="sage" />
+          </div>
+          <p className="smallcaps text-center mb-4">Choose your scene</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
             {thumbs.map((p) => {
               const selected =
                 bgSource?.kind === "preset" && bgSource.id === p.id;
@@ -77,10 +92,10 @@ export function BackgroundPicker() {
                   key={p.id}
                   onClick={() => setBgSource({ kind: "preset", id: p.id })}
                   className={
-                    "rounded-xl overflow-hidden border transition-all " +
+                    "group rounded-xl overflow-hidden border-2 transition-all bg-paper " +
                     (selected
-                      ? "border-accent shadow-lift"
-                      : "border-hairline hover:shadow-soft")
+                      ? "border-burnt shadow-lift"
+                      : "border-hairline hover:border-hairline-soft hover:shadow-soft")
                   }
                 >
                   <img
@@ -88,18 +103,21 @@ export function BackgroundPicker() {
                     alt={p.name}
                     className="w-full aspect-[3/2] object-cover"
                   />
-                  <div className="text-xs py-2 px-3 bg-white text-left">
-                    {p.name}
+                  <div className="text-xs py-2 px-3 text-left flex items-center justify-between">
+                    <span className="font-serif text-base">{p.name}</span>
+                    {selected && (
+                      <span className="text-burnt text-xs">●</span>
+                    )}
                   </div>
                 </button>
               );
             })}
             <label
               className={
-                "rounded-xl border border-dashed border-hairline flex flex-col items-center justify-center text-center text-xs px-3 cursor-pointer hover:border-accent transition-colors " +
+                "rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer transition-colors p-3 " +
                 (bgSource?.kind === "custom"
-                  ? "border-accent bg-white"
-                  : "")
+                  ? "border-burnt bg-paper"
+                  : "border-hairline hover:border-burnt/40 bg-paper/60")
               }
             >
               <input
@@ -115,15 +133,18 @@ export function BackgroundPicker() {
                     alt="Custom"
                     className="w-full aspect-[3/2] object-cover rounded-md mb-2"
                   />
-                  <span>Replace upload</span>
+                  <span className="smallcaps">Replace upload</span>
                 </>
               ) : (
-                <span className="py-6 text-muted">+ Upload your own</span>
+                <>
+                  <span className="ornament text-2xl mb-1">＋</span>
+                  <span className="smallcaps">Upload your own</span>
+                </>
               )}
             </label>
           </div>
           {uploadError && (
-            <p className="text-accent text-xs mt-3">{uploadError}</p>
+            <p className="text-burnt text-xs mt-3 italic">{uploadError}</p>
           )}
         </div>
       )}
@@ -137,33 +158,44 @@ export function BackgroundPicker() {
           disabled={!canContinue}
           onClick={() => setStep("camera")}
         >
-          Continue →
+          To the camera →
         </button>
       </div>
     </div>
   );
 }
 
-function ModeChip({
+function ModeCard({
   active,
-  label,
+  title,
+  tagline,
+  glyph,
   onClick,
 }: {
   active: boolean;
-  label: string;
+  title: string;
+  tagline: string;
+  glyph: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       className={
-        "px-5 py-2.5 rounded-full text-sm transition-all border " +
+        "relative text-left px-6 py-5 rounded-2xl border-2 transition-all " +
         (active
-          ? "border-ink bg-ink text-cream"
-          : "border-hairline bg-white/60 hover:bg-white")
+          ? "border-burnt bg-paper shadow-lift"
+          : "border-hairline bg-paper/70 hover:bg-paper")
       }
     >
-      {label}
+      <span className="ornament text-2xl block mb-2">{glyph}</span>
+      <p className="font-serif text-2xl">{title}</p>
+      <p className="font-body italic text-ink-soft text-base mt-1">
+        {tagline}
+      </p>
+      {active && (
+        <span className="absolute top-3 right-4 stamp">Chosen</span>
+      )}
     </button>
   );
 }
