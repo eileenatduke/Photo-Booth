@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Photo Booth needs your camera to take photo-booth-style snapshots.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Photo Booth does not record audio, but macOS may request this permission for media access.</string>
+</dict>
+</plist>
