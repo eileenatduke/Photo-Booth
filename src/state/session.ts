@@ -21,7 +21,6 @@ type SessionState = {
   composedDataUrl: string | null;
   filterId: FilterId;
   filteredDataUrl: string | null;
-  qrUrl: string | null;
 
   setStep: (step: Step) => void;
   setLayoutId: (id: LayoutId) => void;
@@ -35,7 +34,6 @@ type SessionState = {
   setComposed: (url: string | null) => void;
   setFilterId: (id: FilterId) => void;
   setFiltered: (url: string | null) => void;
-  setQrUrl: (url: string | null) => void;
   resetShots: () => void;
   reset: () => void;
 };
@@ -51,7 +49,6 @@ const initial = {
   composedDataUrl: null,
   filterId: "natural" as FilterId,
   filteredDataUrl: null,
-  qrUrl: null,
 };
 
 export const useSession = create<SessionState>((set) => ({
@@ -91,7 +88,6 @@ export const useSession = create<SessionState>((set) => ({
   setComposed: (composedDataUrl) => set({ composedDataUrl }),
   setFilterId: (filterId) => set({ filterId }),
   setFiltered: (filteredDataUrl) => set({ filteredDataUrl }),
-  setQrUrl: (qrUrl) => set({ qrUrl }),
   resetShots: () =>
     set({
       shots: [],

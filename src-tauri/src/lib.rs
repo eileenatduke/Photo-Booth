@@ -1,12 +1,4 @@
-mod qr_server;
-
 use base64::Engine;
-use std::sync::Mutex;
-use tauri::{Manager, State};
-
-struct AppState {
-    server: Mutex<Option<qr_server::QrServerHandle>>,
-}
 
 fn decode_data_url(data_url: &str) -> Result<Vec<u8>, String> {
     let comma = data_url
@@ -24,24 +16,65 @@ fn save_png_to_path(path: String, data_url: String) -> Result<(), String> {
     std::fs::write(&path, bytes).map_err(|e| format!("write failed: {e}"))
 }
 
-#[tauri::command]
-fn start_qr_server(data_url: String, state: State<AppState>) -> Result<String, String> {
-    let bytes = decode_data_url(&data_url)?;
-    let mut guard = state.server.lock().map_err(|e| e.to_string())?;
-    if let Some(h) = guard.take() {
-        h.stop();
-    }
-    let handle = qr_server::start(bytes)?;
-    let url = handle.url.clone();
-    *guard = Some(handle);
-    Ok(url)
+/// Escape a string for inclusion inside an AppleScript double-quoted literal.
+fn esc_apple(s: &str) -> String {
+    s.replace('\\', r"\\").replace('"', r#"\""#)
 }
 
 #[tauri::command]
-fn stop_qr_server(state: State<AppState>) -> Result<(), String> {
-    let mut guard = state.server.lock().map_err(|e| e.to_string())?;
-    if let Some(h) = guard.take() {
-        h.stop();
+fn email_image(
+    data_url: String,
+    subject: String,
+    body: String,
+    to: Option<String>,
+) -> Result<(), String> {
+    if !cfg!(target_os = "macos") {
+        return Err("Email composition is only supported on macOS for now.".into());
+    }
+
+    let bytes = decode_data_url(&data_url)?;
+    let dir = std::env::temp_dir();
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let path = dir.join(format!("photo-booth-{ts}.png"));
+    std::fs::write(&path, bytes).map_err(|e| format!("temp write failed: {e}"))?;
+    let path_str = path.to_string_lossy().to_string();
+
+    let recipient_block = match to.as_deref().filter(|s| !s.trim().is_empty()) {
+        Some(addr) => format!(
+            r#"make new to recipient at end of to recipients with properties {{address:"{}"}}"#,
+            esc_apple(addr.trim())
+        ),
+        None => String::new(),
+    };
+
+    let script = format!(
+        r#"tell application "Mail"
+    activate
+    set newMsg to make new outgoing message with properties {{subject:"{subject}", content:"{body}", visible:true}}
+    tell newMsg
+        {recipient_block}
+        make new attachment with properties {{file name:POSIX file "{path}"}} at after the last paragraph of content
+    end tell
+end tell"#,
+        subject = esc_apple(&subject),
+        body = esc_apple(&body),
+        recipient_block = recipient_block,
+        path = esc_apple(&path_str),
+    );
+
+    let status = std::process::Command::new("osascript")
+        .args(["-e", &script])
+        .status()
+        .map_err(|e| format!("failed to launch osascript: {e}"))?;
+
+    if !status.success() {
+        return Err(format!(
+            "Mail couldn't open the draft (exit {:?})",
+            status.code()
+        ));
     }
     Ok(())
 }
@@ -50,17 +83,7 @@ fn stop_qr_server(state: State<AppState>) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .setup(|app| {
-            app.manage(AppState {
-                server: Mutex::new(None),
-            });
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            save_png_to_path,
-            start_qr_server,
-            stop_qr_server
-        ])
+        .invoke_handler(tauri::generate_handler![save_png_to_path, email_image])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
