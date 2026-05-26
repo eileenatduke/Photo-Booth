@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useSession, MAX_RETAKES } from "../state/session";
 import { getLayout } from "../layouts";
 import { compose } from "../lib/compose";
@@ -14,16 +15,18 @@ export function ReviewScreen() {
     incRetake,
     setStep,
     setShots,
-  } = useSession((s) => ({
-    layoutId: s.layoutId,
-    shots: s.shots,
-    setComposed: s.setComposed,
-    composedDataUrl: s.composedDataUrl,
-    retakeCount: s.retakeCount,
-    incRetake: s.incRetake,
-    setStep: s.setStep,
-    setShots: s.setShots,
-  }));
+  } = useSession(
+    useShallow((s) => ({
+      layoutId: s.layoutId,
+      shots: s.shots,
+      setComposed: s.setComposed,
+      composedDataUrl: s.composedDataUrl,
+      retakeCount: s.retakeCount,
+      incRetake: s.incRetake,
+      setStep: s.setStep,
+      setShots: s.setShots,
+    })),
+  );
 
   const [busy, setBusy] = useState(true);
 

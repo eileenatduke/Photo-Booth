@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
@@ -16,12 +17,14 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
 }
 
 export function OutputScreen() {
-  const { filteredDataUrl, qrUrl, setQrUrl, reset } = useSession((s) => ({
-    filteredDataUrl: s.filteredDataUrl,
-    qrUrl: s.qrUrl,
-    setQrUrl: s.setQrUrl,
-    reset: s.reset,
-  }));
+  const { filteredDataUrl, qrUrl, setQrUrl, reset } = useSession(
+    useShallow((s) => ({
+      filteredDataUrl: s.filteredDataUrl,
+      qrUrl: s.qrUrl,
+      setQrUrl: s.setQrUrl,
+      reset: s.reset,
+    })),
+  );
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);

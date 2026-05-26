@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
 import { BACKGROUND_PRESETS, renderPresetThumb } from "../lib/backgrounds";
 import { StepHeader } from "./StepHeader";
 
 export function BackgroundPicker() {
   const { bgMode, bgSource, setBgMode, setBgSource, setStep } = useSession(
-    (s) => ({
+    useShallow((s) => ({
       bgMode: s.bgMode,
       bgSource: s.bgSource,
       setBgMode: s.setBgMode,
       setBgSource: s.setBgSource,
       setStep: s.setStep,
-    }),
+    })),
   );
 
   const [uploadError, setUploadError] = useState<string | null>(null);

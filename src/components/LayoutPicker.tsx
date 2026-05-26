@@ -1,13 +1,16 @@
+import { useShallow } from "zustand/react/shallow";
 import { LAYOUTS } from "../layouts";
 import { useSession } from "../state/session";
 import { StepHeader } from "./StepHeader";
 
 export function LayoutPicker() {
-  const { layoutId, setLayoutId, setStep } = useSession((s) => ({
-    layoutId: s.layoutId,
-    setLayoutId: s.setLayoutId,
-    setStep: s.setStep,
-  }));
+  const { layoutId, setLayoutId, setStep } = useSession(
+    useShallow((s) => ({
+      layoutId: s.layoutId,
+      setLayoutId: s.setLayoutId,
+      setStep: s.setStep,
+    })),
+  );
 
   return (
     <div className="min-h-full flex flex-col">

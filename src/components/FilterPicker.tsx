@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { FILTERS, applyFilter } from "../filters";
 import { useSession } from "../state/session";
 import { StepHeader } from "./StepHeader";
@@ -11,13 +12,15 @@ export function FilterPicker() {
     setFilterId,
     setFiltered,
     setStep,
-  } = useSession((s) => ({
-    composedDataUrl: s.composedDataUrl,
-    filterId: s.filterId,
-    setFilterId: s.setFilterId,
-    setFiltered: s.setFiltered,
-    setStep: s.setStep,
-  }));
+  } = useSession(
+    useShallow((s) => ({
+      composedDataUrl: s.composedDataUrl,
+      filterId: s.filterId,
+      setFilterId: s.setFilterId,
+      setFiltered: s.setFiltered,
+      setStep: s.setStep,
+    })),
+  );
 
   const [previews, setPreviews] = useState<Record<FilterId, string>>(
     {} as Record<FilterId, string>,

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
 import { getLayout } from "../layouts";
 import { openCamera, stopCamera, unmirrorFrame } from "../lib/camera";
@@ -23,15 +24,17 @@ export function CameraView() {
     setStep,
     retakeCount,
     shots: existingShots,
-  } = useSession((s) => ({
-    layoutId: s.layoutId,
-    bgMode: s.bgMode,
-    bgSource: s.bgSource,
-    setShots: s.setShots,
-    setStep: s.setStep,
-    retakeCount: s.retakeCount,
-    shots: s.shots,
-  }));
+  } = useSession(
+    useShallow((s) => ({
+      layoutId: s.layoutId,
+      bgMode: s.bgMode,
+      bgSource: s.bgSource,
+      setShots: s.setShots,
+      setStep: s.setStep,
+      retakeCount: s.retakeCount,
+      shots: s.shots,
+    })),
+  );
 
   const layout = layoutId ? getLayout(layoutId) : null;
 
