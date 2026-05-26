@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { invoke } from "@tauri-apps/api/core";
-import { save } from "@tauri-apps/plugin-dialog";
 import { useSession } from "../state/session";
 import { StepHeader } from "./StepHeader";
+import { isTauri, saveImage, emailImage } from "../lib/platform";
 
 const DEFAULT_SUBJECT = "A photograph from the Photo Booth";
 const DEFAULT_BODY =
@@ -28,17 +27,14 @@ export function OutputScreen() {
     if (!filteredDataUrl) return;
     setDownloadError(null);
     try {
-      const path = await save({
-        defaultPath: `photo-booth-${Date.now()}.png`,
-        filters: [{ name: "PNG image", extensions: ["png"] }],
-      });
-      if (!path) return;
-      await invoke("save_png_to_path", {
-        path,
-        dataUrl: filteredDataUrl,
-      });
-      setStatus("Saved ✓");
-      setTimeout(() => setStatus(null), 2400);
+      const { saved } = await saveImage(
+        filteredDataUrl,
+        `photo-booth-${Date.now()}.png`,
+      );
+      if (saved) {
+        setStatus("Saved ✓");
+        setTimeout(() => setStatus(null), 2400);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setDownloadError(msg || "Save failed.");
@@ -50,24 +46,27 @@ export function OutputScreen() {
     setEmailError(null);
     setSending(true);
     try {
-      await invoke("email_image", {
+      const { method } = await emailImage({
         dataUrl: filteredDataUrl,
         subject: subject || DEFAULT_SUBJECT,
         body: DEFAULT_BODY,
-        to: recipient || null,
+        to: recipient,
+        suggestedName: `photo-booth-${Date.now()}.png`,
       });
-      setStatus("Mail draft opened ✓");
-      setTimeout(() => setStatus(null), 2400);
+      const msg =
+        method === "tauri-mail"
+          ? "Mail draft opened ✓"
+          : method === "web-share"
+            ? "Share sheet opened ✓"
+            : "Photo downloaded — attach it in your mail draft ✓";
+      setStatus(msg);
+      setTimeout(() => setStatus(null), 3600);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setEmailError(msg || "Couldn't open Mail.");
     } finally {
       setSending(false);
     }
-  }
-
-  function handleNew() {
-    reset();
   }
 
   return (
@@ -123,19 +122,24 @@ export function OutputScreen() {
               onClick={handleEmail}
               disabled={!filteredDataUrl || sending}
             >
-              {sending ? "Opening Mail…" : "Compose in Mail"}
+              {sending
+                ? "Opening Mail…"
+                : isTauri
+                  ? "Compose in Mail"
+                  : "Send by mail"}
             </button>
             {emailError && (
               <p className="text-xs text-burnt mt-2 italic">{emailError}</p>
             )}
             <p className="text-xs text-muted italic mt-3 leading-snug">
-              Opens Mail.app with the photograph attached. Recipient is
-              optional — you can fill it in there too.
+              {isTauri
+                ? "Opens Mail.app with the photograph attached."
+                : "On phones and some browsers, your share sheet opens with the photo attached. Otherwise the photo downloads first — attach it in your mail draft."}
             </p>
           </div>
 
           <button className="btn-secondary" onClick={handleDownload}>
-            Save as PNG to disk
+            Save as PNG
           </button>
           {downloadError && (
             <p className="text-xs text-burnt text-center italic">
@@ -147,7 +151,7 @@ export function OutputScreen() {
               {status}
             </p>
           )}
-          <button className="btn-ghost mt-auto" onClick={handleNew}>
+          <button className="btn-ghost mt-auto" onClick={reset}>
             Begin a new sitting
           </button>
         </aside>
