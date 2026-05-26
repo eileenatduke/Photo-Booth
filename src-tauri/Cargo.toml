@@ -21,3 +21,10 @@ serde_json = "1"
 tiny_http = "0.12"
 local-ip-address = "0.6"
 rand = "0.8"
+
+[profile.dev]
+debug = 0
+incremental = true
+
+[profile.dev.package."*"]
+debug = 0
