@@ -21,8 +21,11 @@ export function CameraView() {
     bgMode,
     bgSource,
     setShots,
+    replaceShot,
+    incShotRetake,
+    retakeQueue,
+    clearRetakeQueue,
     setStep,
-    retakeCount,
     shots: existingShots,
   } = useSession(
     useShallow((s) => ({
@@ -30,13 +33,20 @@ export function CameraView() {
       bgMode: s.bgMode,
       bgSource: s.bgSource,
       setShots: s.setShots,
+      replaceShot: s.replaceShot,
+      incShotRetake: s.incShotRetake,
+      retakeQueue: s.retakeQueue,
+      clearRetakeQueue: s.clearRetakeQueue,
       setStep: s.setStep,
-      retakeCount: s.retakeCount,
       shots: s.shots,
     })),
   );
 
   const layout = layoutId ? getLayout(layoutId) : null;
+  const isRetake = retakeQueue.length > 0;
+  const indicesToCapture: number[] = isRetake
+    ? retakeQueue
+    : Array.from({ length: layout?.shots ?? 0 }, (_, i) => i);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -49,11 +59,11 @@ export function CameraView() {
   const [countdownValue, setCountdownValue] = useState<
     number | "flash" | null
   >(null);
-  const [shotIndex, setShotIndex] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
   const [lastShotUrl, setLastShotUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const captured = useRef<CapturedShot[]>([]);
+  const newShots = useRef<Map<number, CapturedShot>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -158,18 +168,20 @@ export function CameraView() {
 
   async function runCaptureSequence() {
     if (!layout) return;
-    captured.current = [];
-    setShotIndex(0);
+    newShots.current = new Map();
+    setStepIdx(0);
     setLastShotUrl(null);
-    for (let i = 0; i < layout.shots; i++) {
-      setShotIndex(i);
+
+    for (let i = 0; i < indicesToCapture.length; i++) {
+      const slotIdx = indicesToCapture[i];
+      setStepIdx(i);
       setPhase("countdown");
       for (const v of COUNTDOWN_STEPS) {
         setCountdownValue(v);
         if (v === "flash") {
           setPhase("flash");
           const shot = captureCurrentFrame();
-          captured.current.push(shot);
+          newShots.current.set(slotIdx, shot);
           setLastShotUrl(shot.dataUrl);
           await sleep(FLASH_MS);
         } else {
@@ -182,7 +194,21 @@ export function CameraView() {
       setLastShotUrl(null);
     }
     setPhase("done");
-    setShots(captured.current);
+
+    if (isRetake) {
+      for (const [idx, shot] of newShots.current.entries()) {
+        replaceShot(idx, shot);
+        incShotRetake(idx);
+      }
+      clearRetakeQueue();
+    } else {
+      const ordered: CapturedShot[] = [];
+      for (let i = 0; i < layout.shots; i++) {
+        const s = newShots.current.get(i);
+        if (s) ordered.push(s);
+      }
+      setShots(ordered);
+    }
     setStep("review");
   }
 
@@ -203,23 +229,32 @@ export function CameraView() {
     );
   }
 
+  const totalThisRound = indicesToCapture.length;
+
   return (
     <div className="min-h-full flex flex-col">
       <StepHeader
         title={
           phase === "ready"
-            ? "Ready when you are"
+            ? isRetake
+              ? `Retake ${totalThisRound === 1 ? "this shot" : `${totalThisRound} shots`}`
+              : "Ready when you are"
             : phase === "done"
               ? "All done!"
-              : `Shot ${shotIndex + 1} of ${layout?.shots ?? 0}`
+              : `Shot ${stepIdx + 1} of ${totalThisRound}`
         }
         subtitle={
-          retakeCount > 0
-            ? `Retake ${retakeCount} of 2`
+          isRetake
+            ? "Only the selected slots will be retaken."
             : "We'll take them one at a time."
         }
         onBack={
-          phase === "ready" ? () => setStep("background") : undefined
+          phase === "ready"
+            ? () => {
+                clearRetakeQueue();
+                setStep(isRetake ? "review" : "background");
+              }
+            : undefined
         }
       />
 
@@ -240,7 +275,7 @@ export function CameraView() {
             <div className="absolute inset-0 bg-ink/80 flex items-center justify-center">
               <img
                 src={lastShotUrl}
-                alt={`Shot ${shotIndex + 1}`}
+                alt={`Shot ${stepIdx + 1}`}
                 className="max-h-[80%] max-w-[80%] rounded-2xl shadow-lift fade-in"
               />
             </div>
@@ -254,14 +289,15 @@ export function CameraView() {
             </p>
             <p className="font-serif text-xl">{layout?.name}</p>
             <p className="text-xs text-muted mt-1">
-              {layout?.shots} {layout?.shots === 1 ? "shot" : "shots"}
+              {totalThisRound}{" "}
+              {totalThisRound === 1 ? "shot" : "shots"} this round
             </p>
           </div>
           <ProgressList
-            total={layout?.shots ?? 0}
-            current={shotIndex}
+            indices={indicesToCapture}
+            current={stepIdx}
             phase={phase}
-            previews={captured.current}
+            captured={newShots.current}
             existing={existingShots}
           />
           {phase === "ready" && (
@@ -269,7 +305,7 @@ export function CameraView() {
               className="btn-primary w-full mt-auto"
               onClick={runCaptureSequence}
             >
-              {existingShots.length > 0 ? "Retake all" : "Start"}
+              {isRetake ? "Retake" : "Start"}
             </button>
           )}
         </aside>
@@ -279,16 +315,16 @@ export function CameraView() {
 }
 
 function ProgressList({
-  total,
+  indices,
   current,
   phase,
-  previews,
+  captured,
   existing,
 }: {
-  total: number;
+  indices: number[];
   current: number;
   phase: Phase;
-  previews: CapturedShot[];
+  captured: Map<number, CapturedShot>;
   existing: CapturedShot[];
 }) {
   return (
@@ -297,37 +333,27 @@ function ProgressList({
         Shots
       </p>
       <ul className="space-y-2">
-        {Array.from({ length: total }).map((_, i) => {
-          const captured =
-            previews[i] ?? (phase === "ready" ? existing[i] : undefined);
+        {indices.map((slot, i) => {
+          const done = captured.has(slot) || (phase === "ready" && existing[slot]);
           const isCurrent =
             (phase === "countdown" || phase === "flash" || phase === "preview") &&
             i === current;
           return (
-            <li
-              key={i}
-              className="flex items-center gap-3 text-sm"
-            >
+            <li key={slot} className="flex items-center gap-3 text-sm">
               <span
                 className={
                   "h-6 w-6 rounded-full grid place-items-center text-xs font-medium " +
-                  (captured
+                  (done
                     ? "bg-accent text-cream"
                     : isCurrent
                       ? "bg-ink text-cream"
                       : "bg-hairline text-muted")
                 }
               >
-                {i + 1}
+                {slot + 1}
               </span>
-              <span
-                className={captured ? "text-ink" : "text-muted"}
-              >
-                {captured
-                  ? "Captured"
-                  : isCurrent
-                    ? "In progress…"
-                    : "Pending"}
+              <span className={done ? "text-ink" : "text-muted"}>
+                {done ? "Captured" : isCurrent ? "In progress…" : "Pending"}
               </span>
             </li>
           );

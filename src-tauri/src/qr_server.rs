@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::io::Cursor;
-use std::net::TcpListener;
+use std::net::{IpAddr, TcpListener};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tiny_http::{Header, Response, Server};
@@ -34,9 +34,35 @@ fn pick_port() -> Option<u16> {
 }
 
 fn lan_ip() -> String {
-    local_ip_address::local_ip()
-        .map(|ip| ip.to_string())
-        .unwrap_or_else(|_| "127.0.0.1".to_string())
+    if let Ok(ifaces) = local_ip_address::list_afinet_netifas() {
+        for (_name, ip) in ifaces {
+            if let IpAddr::V4(v4) = ip {
+                let octets = v4.octets();
+                if v4.is_loopback() || v4.is_unspecified() || v4.is_link_local() {
+                    continue;
+                }
+                // Prefer private RFC1918 addresses (10/8, 172.16/12, 192.168/16)
+                let is_private = octets[0] == 10
+                    || (octets[0] == 172 && (16..=31).contains(&octets[1]))
+                    || (octets[0] == 192 && octets[1] == 168);
+                if is_private {
+                    return v4.to_string();
+                }
+            }
+        }
+        // Fall back to any non-loopback IPv4
+        for (_name, ip) in local_ip_address::list_afinet_netifas().unwrap_or_default() {
+            if let IpAddr::V4(v4) = ip {
+                if !v4.is_loopback() && !v4.is_unspecified() {
+                    return v4.to_string();
+                }
+            }
+        }
+    }
+    if let Ok(ip) = local_ip_address::local_ip() {
+        return ip.to_string();
+    }
+    "127.0.0.1".to_string()
 }
 
 pub fn start(image_bytes: Vec<u8>) -> Result<QrServerHandle, String> {
@@ -69,6 +95,7 @@ pub fn start(image_bytes: Vec<u8>) -> Result<QrServerHandle, String> {
                     200.into(),
                     vec![
                         Header::from_bytes(&b"Content-Type"[..], &b"image/png"[..]).unwrap(),
+                        Header::from_bytes(&b"Content-Disposition"[..], &b"inline; filename=photo-booth.png"[..]).unwrap(),
                         Header::from_bytes(
                             &b"Cache-Control"[..],
                             &b"no-store, must-revalidate"[..],

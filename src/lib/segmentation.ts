@@ -18,8 +18,8 @@ export async function getSegmenter(): Promise<ImageSegmenter> {
           delegate: "GPU",
         },
         runningMode: "VIDEO",
-        outputCategoryMask: true,
-        outputConfidenceMasks: false,
+        outputCategoryMask: false,
+        outputConfidenceMasks: true,
       });
     })();
   }
@@ -40,6 +40,23 @@ export type CompositeArgs = {
   mirror: boolean;
 };
 
+// Reusable scratch canvases — avoids per-frame allocation.
+let scratchMask: HTMLCanvasElement | null = null;
+let scratchMaskBlur: HTMLCanvasElement | null = null;
+let scratchPerson: HTMLCanvasElement | null = null;
+let scratchBg: HTMLCanvasElement | null = null;
+
+function ensureCanvas(
+  ref: HTMLCanvasElement | null,
+  w: number,
+  h: number,
+): HTMLCanvasElement {
+  const c = ref ?? document.createElement("canvas");
+  if (c.width !== w) c.width = w;
+  if (c.height !== h) c.height = h;
+  return c;
+}
+
 export async function compositeFrame({
   video,
   output,
@@ -59,50 +76,73 @@ export async function compositeFrame({
   const segmenter = await getSegmenter();
   const ts = performance.now();
   const result = segmenter.segmentForVideo(video, ts);
-  const mask = result.categoryMask;
-  if (!mask) {
+  const masks = result.confidenceMasks;
+  if (!masks || masks.length === 0) {
     drawPossiblyMirrored(ctx, video, w, h, mirror);
     result.close();
     return;
   }
-
-  const maskData = mask.getAsUint8Array();
+  const mask = masks[0];
   const maskW = mask.width;
   const maskH = mask.height;
+  const maskFloats = mask.getAsFloat32Array();
 
-  const bgCanvas = document.createElement("canvas");
-  bgCanvas.width = w;
-  bgCanvas.height = h;
-  const bgCtx = bgCanvas.getContext("2d")!;
+  // --- Build alpha mask at video resolution, with bilinear upsample + soft curve.
+  // 1. Stamp the float mask into a small canvas as grayscale.
+  scratchMask = ensureCanvas(scratchMask, maskW, maskH);
+  const maskCtx = scratchMask.getContext("2d")!;
+  const maskImage = maskCtx.createImageData(maskW, maskH);
+  const md = maskImage.data;
+  for (let i = 0; i < maskFloats.length; i++) {
+    // Soft curve: pushes mid values away from 0.5 for cleaner separation
+    // while keeping a smooth transition band.
+    const v = maskFloats[i];
+    const eased = v <= 0.5 ? 2 * v * v : 1 - 2 * (1 - v) * (1 - v);
+    const a = Math.round(eased * 255);
+    md[i * 4] = 255;
+    md[i * 4 + 1] = 255;
+    md[i * 4 + 2] = 255;
+    md[i * 4 + 3] = a;
+  }
+  maskCtx.putImageData(maskImage, 0, 0);
+
+  // 2. Upscale + slight blur via two-step bilinear redraw.
+  scratchMaskBlur = ensureCanvas(scratchMaskBlur, w, h);
+  const blurCtx = scratchMaskBlur.getContext("2d")!;
+  blurCtx.clearRect(0, 0, w, h);
+  blurCtx.imageSmoothingEnabled = true;
+  blurCtx.imageSmoothingQuality = "high";
+  // Slight CSS-style blur for edge feathering.
+  blurCtx.filter = `blur(${Math.max(1, Math.round(w / 320))}px)`;
+  if (mirror) {
+    blurCtx.save();
+    blurCtx.scale(-1, 1);
+    blurCtx.drawImage(scratchMask, 0, 0, maskW, maskH, -w, 0, w, h);
+    blurCtx.restore();
+  } else {
+    blurCtx.drawImage(scratchMask, 0, 0, maskW, maskH, 0, 0, w, h);
+  }
+  blurCtx.filter = "none";
+
+  // --- Composite: background, then person * alpha.
+  scratchBg = ensureCanvas(scratchBg, w, h);
+  const bgCtx = scratchBg.getContext("2d")!;
   drawCover(bgCtx, background, 0, 0, w, h);
 
-  const personCanvas = document.createElement("canvas");
-  personCanvas.width = w;
-  personCanvas.height = h;
-  const personCtx = personCanvas.getContext("2d")!;
+  scratchPerson = ensureCanvas(scratchPerson, w, h);
+  const personCtx = scratchPerson.getContext("2d")!;
+  personCtx.globalCompositeOperation = "source-over";
   drawPossiblyMirrored(personCtx, video, w, h, mirror);
-  const frame = personCtx.getImageData(0, 0, w, h);
+  // Multiply person by alpha mask: keep only the person pixels.
+  personCtx.globalCompositeOperation = "destination-in";
+  personCtx.drawImage(scratchMaskBlur, 0, 0);
+  personCtx.globalCompositeOperation = "source-over";
 
-  const sx = maskW / w;
-  const sy = maskH / h;
-  for (let y = 0; y < h; y++) {
-    const my = Math.min(maskH - 1, Math.floor(y * sy));
-    for (let x = 0; x < w; x++) {
-      const mx = mirror
-        ? Math.min(maskW - 1, Math.floor((w - 1 - x) * sx))
-        : Math.min(maskW - 1, Math.floor(x * sx));
-      const m = maskData[my * maskW + mx];
-      if (m !== 0) {
-        const i = (y * w + x) * 4;
-        frame.data[i + 3] = 0;
-      }
-    }
-  }
-  personCtx.putImageData(frame, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(scratchBg, 0, 0);
+  ctx.drawImage(scratchPerson, 0, 0);
 
-  ctx.drawImage(bgCanvas, 0, 0);
-  ctx.drawImage(personCanvas, 0, 0);
-
+  mask.close();
   result.close();
 }
 

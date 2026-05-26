@@ -2,19 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { writeFile } from "@tauri-apps/plugin-fs";
 import { useSession } from "../state/session";
 import { toQrDataUrl } from "../lib/qr";
 import { StepHeader } from "./StepHeader";
-
-function dataUrlToBytes(dataUrl: string): Uint8Array {
-  const comma = dataUrl.indexOf(",");
-  const b64 = dataUrl.slice(comma + 1);
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
 
 export function OutputScreen() {
   const { filteredDataUrl, qrUrl, setQrUrl, reset } = useSession(
@@ -29,6 +19,7 @@ export function OutputScreen() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -36,17 +27,15 @@ export function OutputScreen() {
     startedRef.current = true;
     (async () => {
       try {
-        const bytes = dataUrlToBytes(filteredDataUrl);
         const url = await invoke<string>("start_qr_server", {
-          imageBytes: Array.from(bytes),
+          dataUrl: filteredDataUrl,
         });
         setQrUrl(url);
         const qr = await toQrDataUrl(url);
         setQrDataUrl(qr);
       } catch (e) {
-        setServerError(
-          e instanceof Error ? e.message : "Couldn't start the QR server.",
-        );
+        const msg = e instanceof Error ? e.message : String(e);
+        setServerError(msg || "Couldn't start the QR server.");
       }
     })();
     return () => {
@@ -56,18 +45,33 @@ export function OutputScreen() {
 
   async function handleDownload() {
     if (!filteredDataUrl) return;
+    setDownloadError(null);
     try {
       const path = await save({
         defaultPath: `photo-booth-${Date.now()}.png`,
         filters: [{ name: "PNG image", extensions: ["png"] }],
       });
       if (!path) return;
-      const bytes = dataUrlToBytes(filteredDataUrl);
-      await writeFile(path, bytes);
-      setStatus("Saved!");
-      setTimeout(() => setStatus(null), 2000);
+      await invoke("save_png_to_path", {
+        path,
+        dataUrl: filteredDataUrl,
+      });
+      setStatus("Saved ✓");
+      setTimeout(() => setStatus(null), 2400);
     } catch (e) {
-      setStatus(e instanceof Error ? e.message : "Save failed.");
+      const msg = e instanceof Error ? e.message : String(e);
+      setDownloadError(msg || "Save failed.");
+    }
+  }
+
+  async function handleCopyUrl() {
+    if (!qrUrl) return;
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      setStatus("Link copied ✓");
+      setTimeout(() => setStatus(null), 2400);
+    } catch {
+      // ignore — fallback shown in UI
     }
   }
 
@@ -107,16 +111,27 @@ export function OutputScreen() {
               )}
             </div>
             {qrUrl && (
-              <p className="text-xs text-muted mt-3 break-all">{qrUrl}</p>
+              <>
+                <button
+                  className="text-xs text-muted hover:text-ink underline mt-3 break-all"
+                  onClick={handleCopyUrl}
+                  title="Copy link"
+                >
+                  {qrUrl}
+                </button>
+                <p className="text-xs text-muted mt-2">
+                  Phone must be on the same Wi-Fi network.
+                </p>
+              </>
             )}
-            <p className="text-xs text-muted mt-3">
-              Phone must be on the same Wi-Fi network.
-            </p>
           </div>
 
           <button className="btn-primary" onClick={handleDownload}>
             Download PNG
           </button>
+          {downloadError && (
+            <p className="text-xs text-accent text-center">{downloadError}</p>
+          )}
           {status && (
             <p className="text-xs text-muted text-center">{status}</p>
           )}
