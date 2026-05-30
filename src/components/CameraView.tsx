@@ -6,7 +6,6 @@ import { openCamera, stopCamera, unmirrorFrame } from "../lib/camera";
 import { compositeFrame } from "../lib/segmentation";
 import { renderPresetToCanvas } from "../lib/backgrounds";
 import { CountdownOverlay } from "./CountdownOverlay";
-import { StepHeader } from "./StepHeader";
 import type { CapturedShot } from "../types";
 
 type Phase = "init" | "ready" | "countdown" | "flash" | "preview" | "done";
@@ -26,7 +25,6 @@ export function CameraView() {
     retakeQueue,
     clearRetakeQueue,
     setStep,
-    shots: existingShots,
   } = useSession(
     useShallow((s) => ({
       layoutId: s.layoutId,
@@ -38,7 +36,6 @@ export function CameraView() {
       retakeQueue: s.retakeQueue,
       clearRetakeQueue: s.clearRetakeQueue,
       setStep: s.setStep,
-      shots: s.shots,
     })),
   );
 
@@ -48,12 +45,17 @@ export function CameraView() {
     ? retakeQueue
     : Array.from({ length: layout?.shots ?? 0 }, (_, i) => i);
 
+  // The on-screen frame matches the proportions of each captured photo.
+  const photoAspect = layout?.shotAspect ?? 4 / 3;
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const dimsRef = useRef<{ w: number; h: number }>({ w: 1280, h: 720 });
   const rafRef = useRef<number | null>(null);
-  const backgroundRef = useRef<HTMLImageElement | HTMLCanvasElement | null>(null);
+  const backgroundRef = useRef<HTMLImageElement | HTMLCanvasElement | null>(
+    null,
+  );
 
   const [phase, setPhase] = useState<Phase>("init");
   const [countdownValue, setCountdownValue] = useState<
@@ -214,17 +216,15 @@ export function CameraView() {
 
   if (error) {
     return (
-      <div className="min-h-full flex flex-col p-10">
-        <StepHeader
-          title="Camera trouble"
-          onBack={() => setStep("background")}
-        />
-        <div className="card-bordered p-8 max-w-lg">
-          <p className="font-body italic text-xl leading-relaxed">{error}</p>
-          <p className="text-muted text-sm mt-3">
-            Make sure no other app is using the webcam, then refresh.
-          </p>
-        </div>
+      <div className="fixed inset-0 z-50 bg-black text-white flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-2xl font-serif mb-3">Camera trouble</p>
+        <p className="text-white/70 max-w-md">{error}</p>
+        <button
+          className="mt-8 px-6 py-3 rounded-full bg-white text-black text-sm"
+          onClick={() => setStep("background")}
+        >
+          Go back
+        </button>
       </div>
     );
   }
@@ -232,139 +232,70 @@ export function CameraView() {
   const totalThisRound = indicesToCapture.length;
 
   return (
-    <div className="min-h-full flex flex-col">
-      <StepHeader
-        title={
-          phase === "ready"
-            ? isRetake
-              ? `Retake ${totalThisRound === 1 ? "this shot" : `${totalThisRound} shots`}`
-              : "Mind the countdown"
-            : phase === "done"
-              ? "And that's a wrap."
-              : `Shot ${stepIdx + 1} of ${totalThisRound}`
-        }
-        subtitle={
-          isRetake
-            ? "Only the slots you queued will be retaken."
-            : "Three, two, one — then the flash. Hold the pose."
-        }
-        ornament="✦"
-        onBack={
-          phase === "ready"
-            ? () => {
-                clearRetakeQueue();
-                setStep(isRetake ? "review" : "background");
-              }
-            : undefined
-        }
-      />
+    <div className="fixed inset-0 z-50 bg-black text-white flex flex-col">
+      {/* Top: a single back affordance + the word "countdown" */}
+      <div className="relative px-6 pt-6">
+        {phase === "ready" && (
+          <button
+            onClick={() => {
+              clearRetakeQueue();
+              setStep(isRetake ? "review" : "background");
+            }}
+            className="absolute left-6 top-6 text-white/60 hover:text-white text-[11px] uppercase tracking-[0.3em]"
+          >
+            &larr; Back
+          </button>
+        )}
+        <h1 className="text-center text-white text-3xl sm:text-4xl tracking-[0.45em] uppercase font-light">
+          countdown
+        </h1>
+      </div>
 
-      <div className="flex-1 px-10 pb-10 flex items-stretch justify-center gap-8">
-        <div className="relative flex-1 max-w-5xl">
-          <div className="relative rounded-2xl overflow-hidden bg-ink shadow-lift aspect-video border-4 border-ink">
-            <video ref={videoRef} className="hidden" muted playsInline />
-            <canvas
-              ref={previewCanvasRef}
-              className="w-full h-full object-cover"
+      {/* Middle: the only non-black region — the photo itself, no border */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-7 px-4">
+        <div
+          className="relative overflow-hidden bg-black h-[58vh] max-w-[92vw]"
+          style={{ aspectRatio: photoAspect }}
+        >
+          <video ref={videoRef} className="hidden" muted playsInline />
+          <canvas
+            ref={previewCanvasRef}
+            className="w-full h-full object-cover"
+          />
+          <CountdownOverlay value={countdownValue} />
+          {phase === "preview" && lastShotUrl && (
+            <img
+              src={lastShotUrl}
+              alt={`Shot ${stepIdx + 1}`}
+              className="absolute inset-0 w-full h-full object-cover fade-in"
             />
-            <CountdownOverlay value={countdownValue} />
-            {phase === "preview" && lastShotUrl && (
-              <div className="absolute inset-0 bg-ink/85 flex items-center justify-center">
-                <div className="bg-paper p-3 pb-8 shadow-lift rotate-[-1.5deg] fade-in">
-                  <img
-                    src={lastShotUrl}
-                    alt={`Shot ${stepIdx + 1}`}
-                    className="max-h-[55vh] max-w-[55vw] block"
-                  />
-                  <p className="font-body italic text-center text-ink mt-2">
-                    Shot {stepIdx + 1}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-          <p className="smallcaps mt-3 text-center">
-            Live view · mirrored for your comfort
-          </p>
+          )}
         </div>
 
-        <aside className="w-72 flex flex-col gap-4">
-          <div className="card-bordered p-5">
-            <p className="smallcaps mb-2">The format</p>
-            <p className="font-serif text-2xl">{layout?.name}</p>
-            <p className="font-body italic text-ink-soft mt-1">
-              {totalThisRound} {totalThisRound === 1 ? "shot" : "shots"} this round
-            </p>
-          </div>
-          <ProgressList
-            indices={indicesToCapture}
-            current={stepIdx}
-            phase={phase}
-            captured={newShots.current}
-            existing={existingShots}
-          />
+        <div className="h-16 flex flex-col items-center justify-center">
           {phase === "ready" && (
-            <button
-              className="btn-primary w-full mt-auto"
-              onClick={runCaptureSequence}
-            >
-              {isRetake ? "Begin retake" : "Start the sitting"}
-            </button>
+            <>
+              <button
+                onClick={runCaptureSequence}
+                className="px-10 py-4 rounded-full bg-white text-black text-sm font-medium tracking-wide hover:bg-white/90 transition"
+              >
+                {isRetake ? "Begin Retake" : "Start the Sitting"}
+              </button>
+              <p className="text-white/50 text-[11px] uppercase tracking-[0.3em] mt-3">
+                {totalThisRound} {totalThisRound === 1 ? "portrait" : "portraits"}{" "}
+                · 3-second timer
+              </p>
+            </>
           )}
-        </aside>
+          {(phase === "countdown" ||
+            phase === "flash" ||
+            phase === "preview") && (
+            <p className="text-white/70 text-sm tracking-wide">
+              Portrait {stepIdx + 1} of {totalThisRound}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
-
-function ProgressList({
-  indices,
-  current,
-  phase,
-  captured,
-  existing,
-}: {
-  indices: number[];
-  current: number;
-  phase: Phase;
-  captured: Map<number, CapturedShot>;
-  existing: CapturedShot[];
-}) {
-  return (
-    <div className="card-bordered p-5">
-      <p className="smallcaps mb-3">Shots</p>
-      <ul className="space-y-2">
-        {indices.map((slot, i) => {
-          const done = captured.has(slot) || (phase === "ready" && existing[slot]);
-          const isCurrent =
-            (phase === "countdown" || phase === "flash" || phase === "preview") &&
-            i === current;
-          return (
-            <li key={slot} className="flex items-center gap-3 text-sm">
-              <span
-                className={
-                  "h-7 w-7 rounded-full grid place-items-center font-serif " +
-                  (done
-                    ? "bg-burnt text-paper"
-                    : isCurrent
-                      ? "bg-ink text-paper"
-                      : "border border-hairline text-muted")
-                }
-              >
-                {slot + 1}
-              </span>
-              <span
-                className={
-                  "font-body italic " +
-                  (done ? "text-ink" : "text-muted")
-                }
-              >
-                {done ? "Captured" : isCurrent ? "In progress…" : "Pending"}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

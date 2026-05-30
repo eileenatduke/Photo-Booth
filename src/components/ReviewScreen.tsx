@@ -51,38 +51,32 @@ export function ReviewScreen() {
   const queueSize = retakeQueue.length;
   const layout = layoutId ? getLayout(layoutId) : null;
 
-  function startRetake() {
-    if (queueSize === 0) return;
-    setStep("camera");
-  }
-
   return (
-    <div className="min-h-full flex flex-col">
+    <div className="flex-1 flex flex-col fade-in">
       <StepHeader
-        title="The proofs"
-        subtitle="Tap any frame you'd like to retake — each one allows up to two tries."
-        ornament="❋"
+        title="Review"
+        subtitle="Select any frame you'd like to retake — each one allows up to two tries."
       />
-      <div className="px-10 pb-10 flex-1 flex items-stretch gap-8">
-        <div className="flex-1 flex items-center justify-center">
+
+      <div className="flex-1 px-2 pb-8 flex flex-col lg:flex-row items-start gap-8">
+        <div className="flex-1 w-full flex items-center justify-center">
           {busy && (
-            <p className="font-body italic text-ink-soft text-lg">
+            <p className="font-body text-ink-soft text-lg py-16">
               Composing your photograph…
             </p>
           )}
           {!busy && composedDataUrl && (
-            <div className="relative bg-paper p-4 shadow-lift rotate-[-0.6deg]">
-              <img
-                src={composedDataUrl}
-                alt="Composed result"
-                className="max-h-[68vh] max-w-full block fade-in"
-              />
-            </div>
+            <img
+              src={composedDataUrl}
+              alt="Composed result"
+              className="max-h-[64vh] w-auto block rounded-[3px] shadow-lift fade-in"
+            />
           )}
         </div>
-        <aside className="w-80 flex flex-col gap-4">
-          <div className="card-bordered p-5">
-            <p className="smallcaps mb-3">Your shots</p>
+
+        <aside className="w-full lg:w-80 flex flex-col gap-4">
+          <div className="card p-5">
+            <p className="smallcaps mb-3">Your Portraits</p>
             <ul className="space-y-2">
               {shots.map((shot, i) => {
                 const retakes = shotRetakes[i] ?? 0;
@@ -95,15 +89,15 @@ export function ReviewScreen() {
                       disabled={maxed}
                       onClick={() => toggleRetakeIndex(i)}
                       className={
-                        "w-full flex items-center gap-3 p-2 rounded-xl border-2 transition-all text-left " +
+                        "w-full flex items-center gap-3 p-2 rounded-lg border transition-all text-left bg-paper " +
                         (queued
-                          ? "border-burnt bg-paper shadow-soft"
+                          ? "border-champagne-deep ring-1 ring-champagne-deep shadow-soft"
                           : maxed
-                            ? "border-hairline bg-paper/40 opacity-60 cursor-not-allowed"
-                            : "border-hairline bg-paper/70 hover:bg-paper")
+                            ? "border-hairline opacity-50 cursor-not-allowed"
+                            : "border-hairline hover:border-champagne-deep")
                       }
                     >
-                      <div className="w-14 h-14 rounded overflow-hidden bg-hairline flex-shrink-0 border border-hairline">
+                      <div className="w-14 h-14 rounded overflow-hidden bg-cream flex-shrink-0 border border-hairline">
                         <img
                           src={shot.dataUrl}
                           alt={`Shot ${i + 1}`}
@@ -111,10 +105,10 @@ export function ReviewScreen() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-serif text-lg leading-tight">
-                          Shot {i + 1}
+                        <p className="font-serif text-lg leading-tight text-ink">
+                          Portrait {i + 1}
                         </p>
-                        <p className="text-xs text-muted italic font-body">
+                        <p className="text-xs text-muted font-body">
                           {maxed
                             ? "No retakes left"
                             : queued
@@ -124,9 +118,9 @@ export function ReviewScreen() {
                       </div>
                       <span
                         className={
-                          "h-6 w-6 rounded-full border-2 flex items-center justify-center text-xs " +
+                          "h-6 w-6 rounded-full border flex items-center justify-center text-xs " +
                           (queued
-                            ? "bg-burnt border-burnt text-paper"
+                            ? "bg-ink border-ink text-paper"
                             : "border-hairline bg-paper")
                         }
                       >
@@ -138,10 +132,11 @@ export function ReviewScreen() {
               })}
             </ul>
           </div>
+
           <button
             className="btn-secondary"
             disabled={queueSize === 0 || busy}
-            onClick={startRetake}
+            onClick={() => queueSize > 0 && setStep("camera")}
           >
             Retake {queueSize > 0 ? `${queueSize} ` : ""}
             {queueSize === 1 ? "shot" : "shots"}
@@ -154,10 +149,10 @@ export function ReviewScreen() {
             }}
             disabled={busy || !composedDataUrl}
           >
-            To the darkroom →
+            Continue
           </button>
           {layout && (
-            <p className="font-body italic text-muted text-center">
+            <p className="font-body text-muted text-center">
               {layout.name} · {shots.length}{" "}
               {shots.length === 1 ? "shot" : "shots"}
             </p>

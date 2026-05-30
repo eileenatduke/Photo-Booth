@@ -69,7 +69,7 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -86,6 +86,10 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /* Carved foliate relief, embossed (dark recesses + light ridges).
+       Blended over gold to read as gilt carving. */
+    --gilt-relief: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'><g fill='none' stroke-linecap='round'><g stroke='rgba(58,40,8,0.5)' stroke-width='2'><path d='M-3 11 C 9 5 15 15 23 10 C 31 5 39 13 49 9'/><path d='M7 1 C 10 7 5 12 10 18'/><path d='M25 1 C 28 7 23 12 28 18'/><path d='M-3 34 C 9 28 15 38 23 33 C 31 28 39 36 49 32'/><path d='M15 24 C 18 30 13 35 18 41'/><path d='M37 24 C 40 30 35 35 40 41'/></g><g stroke='rgba(255,244,212,0.55)' stroke-width='1' transform='translate(-0.6,-0.7)'><path d='M-3 11 C 9 5 15 15 23 10 C 31 5 39 13 49 9'/><path d='M7 1 C 10 7 5 12 10 18'/><path d='M25 1 C 28 7 23 12 28 18'/><path d='M-3 34 C 9 28 15 38 23 33 C 31 28 39 36 49 32'/><path d='M15 24 C 18 30 13 35 18 41'/><path d='M37 24 C 40 30 35 35 40 41'/></g></g></svg>");
   }
   html,
   body,
@@ -93,20 +97,8 @@
     height: 100%;
   }
   body {
-    @apply bg-cream text-ink font-sans antialiased;
+    @apply bg-porcelain text-ink font-sans antialiased;
     margin: 0;
-    background-image:
-      radial-gradient(
-        circle at 12% 18%,
-        rgba(184, 90, 44, 0.05),
-        transparent 45%
-      ),
-      radial-gradient(
-        circle at 88% 80%,
-        rgba(122, 139, 110, 0.06),
-        transparent 45%
-      );
-    background-attachment: fixed;
   }
 }
 
@@ -118,17 +110,17 @@
            ease-cinema border select-none;
   }
   .btn-primary {
-    @apply btn bg-burnt text-paper border-burnt shadow-soft
-           hover:bg-[#A04E25] hover:border-[#A04E25]
-           active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply btn bg-ink text-paper border-ink shadow-soft
+           hover:bg-ink-soft hover:border-ink-soft
+           active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply btn bg-paper text-ink border-hairline hover:bg-white
-           active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply btn bg-paper text-ink border-hairline hover:border-champagne-deep
+           active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed;
   }
   .btn-ghost {
     @apply btn bg-transparent text-muted border-transparent hover:text-ink
-           active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
+           active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed;
   }
 
   /* ---------- Typography ---------- */
@@ -136,80 +128,131 @@
     @apply font-serif text-ink leading-[1.05];
   }
   .heading-script {
-    @apply font-serif italic text-ink leading-[1.05];
+    @apply font-serif italic leading-[1.1];
   }
   .smallcaps {
-    @apply text-[10px] uppercase tracking-[0.32em] text-muted;
+    @apply text-[10px] uppercase tracking-[0.34em] text-muted;
     font-feature-settings: "smcp";
   }
-  .ornament {
-    @apply text-burnt font-serif select-none;
+  .placard {
+    @apply font-body text-sm text-muted;
+  }
+
+  /* ---------- Antique gilt picture frame ---------- */
+  /* Three carved tiers: outer band -> recessed channel -> inner lip,
+     finished in variegated gold leaf with embossed foliate relief. */
+  .frame {
+    position: relative;
+    padding: 17px;
+    border-radius: 3px;
+    background-image: var(--gilt-relief),
+      linear-gradient(
+        135deg,
+        #efd99f 0%,
+        #c79b44 20%,
+        #f2e3a8 38%,
+        #9a7a2e 58%,
+        #dabd6a 78%,
+        #7c5e20 100%
+      );
+    background-size:
+      40px 40px,
+      cover;
+    background-blend-mode: soft-light, normal;
+    box-shadow:
+      0 0 0 1px rgba(58, 42, 12, 0.6),
+      0 8px 18px rgba(28, 27, 25, 0.22),
+      0 26px 56px rgba(28, 27, 25, 0.26),
+      inset 0 2px 1px rgba(255, 247, 216, 0.8),
+      inset 0 -3px 3px rgba(74, 52, 16, 0.6);
+  }
+  /* recessed channel between the two carved bands */
+  .frame::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(135deg, #9a7a2e, #6f521c);
+    box-shadow:
+      inset 0 2px 4px rgba(46, 32, 8, 0.75),
+      inset 0 -2px 2px rgba(255, 240, 200, 0.22);
+  }
+  /* inner raised, carved lip hugging the artwork */
+  .frame::after {
+    content: "";
+    position: absolute;
+    inset: 11px;
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 2;
+    background-image: var(--gilt-relief),
+      linear-gradient(135deg, #f0dca0 0%, #c39a42 55%, #8a6a24 100%);
+    background-size:
+      26px 26px,
+      cover;
+    background-blend-mode: soft-light, normal;
+    box-shadow:
+      0 0 0 1px rgba(58, 42, 12, 0.6),
+      inset 0 1px 1px rgba(255, 247, 216, 0.7),
+      inset 0 -1px 2px rgba(74, 52, 16, 0.6);
+  }
+
+  /* The mat / artwork sits above all the carved tiers. */
+  .matte {
+    @apply bg-paper overflow-hidden relative;
+    z-index: 10;
+    border-radius: 1px;
+    box-shadow: 0 0 0 1px rgba(58, 42, 12, 0.35);
+  }
+
+  .frame-hover {
+    @apply transition-transform duration-200 ease-cinema;
+  }
+  .frame-hover:hover {
+    transform: translateY(-2px);
+  }
+
+  .frame-selected {
+    outline: 2px solid theme("colors.ink");
+    outline-offset: 5px;
+  }
+
+  /* ---------- Simple black & white ornamental border ---------- */
+  .frame-bw {
+    position: relative;
+    background: theme("colors.paper");
+    border-radius: 2px;
+  }
+  .frame-bw::after {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border: 1px solid theme("colors.ink");
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .frame-bw-selected::after {
+    inset: 7px;
+    border-width: 1.5px;
+    box-shadow: 0 0 0 1px theme("colors.ink");
   }
 
   /* ---------- Surfaces ---------- */
   .card {
-    @apply bg-paper border border-hairline rounded-2xl shadow-soft;
-  }
-  .card-bordered {
-    @apply bg-paper rounded-lg shadow-soft;
-    border: 1px double theme("colors.hairline");
-    position: relative;
-  }
-  .card-bordered::before {
-    content: "";
-    position: absolute;
-    inset: 6px;
-    border: 1px solid theme("colors.hairline-soft");
-    border-radius: 6px;
-    pointer-events: none;
-  }
-  .magazine-rule {
-    @apply h-px bg-ink;
-  }
-  .magazine-rule-double {
-    border-top: 1px solid theme("colors.ink");
-    border-bottom: 1px solid theme("colors.ink");
-    height: 4px;
+    @apply bg-paper border border-hairline rounded-lg shadow-soft;
   }
 
-  /* ---------- Decorative ---------- */
   .stamp {
     @apply inline-flex items-center gap-2 px-3 py-1 rounded-full
-           border border-burnt/40 text-burnt text-[10px] uppercase
-           tracking-[0.28em] bg-burnt/[0.04];
-  }
-  .seal {
-    @apply relative inline-grid place-items-center w-20 h-20 rounded-full
-           border-2 border-double border-burnt text-burnt;
+           border border-champagne-deep/50 text-champagne-deep text-[10px]
+           uppercase tracking-[0.28em] bg-champagne/[0.06];
   }
 
   /* ---------- Effects ---------- */
   .fade-in {
-    animation: fadeIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  .grain {
-    position: relative;
-  }
-  .grain::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.08;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  }
-  .halftone {
-    background-image: radial-gradient(
-      theme("colors.ink/15") 1px,
-      transparent 1.4px
-    );
-    background-size: 8px 8px;
-  }
-  .scallop-edge {
-    --c: theme("colors.cream");
-    background:
-      radial-gradient(circle at 8px 0, transparent 7px, var(--c) 7.5px) 0 0/16px
-        8px repeat-x;
+    animation: fadeIn 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }

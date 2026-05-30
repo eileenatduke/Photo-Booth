@@ -1,90 +1,55 @@
-type DividerProps = {
-  glyph?: string;
-  tone?: "ink" | "burnt" | "sage";
+type Props = {
+  className?: string;
 };
 
-export function Divider({ glyph = "❋", tone = "burnt" }: DividerProps) {
-  const color =
-    tone === "burnt" ? "text-burnt" : tone === "sage" ? "text-sage-deep" : "text-ink";
-  return (
-    <div className="flex items-center gap-3 select-none">
-      <span className="flex-1 h-px bg-hairline" />
-      <span className={`text-lg ${color}`}>{glyph}</span>
-      <span className="flex-1 h-px bg-hairline" />
-    </div>
-  );
-}
-
-type SealProps = {
-  number?: number | string;
-  label?: string;
-};
-
-export function Seal({ number, label }: SealProps) {
-  return (
-    <div className="relative inline-grid place-items-center w-24 h-24">
-      <span className="absolute inset-0 rounded-full border border-burnt/60" />
-      <span className="absolute inset-1.5 rounded-full border border-burnt/30" />
-      {number !== undefined && (
-        <span className="font-serif text-3xl text-burnt leading-none">
-          {number}
-        </span>
-      )}
-      {label && (
-        <span className="absolute bottom-2 text-[8px] uppercase tracking-[0.32em] text-burnt">
-          {label}
-        </span>
-      )}
-    </div>
-  );
-}
-
-export function MastheadRule() {
-  return (
-    <div className="space-y-[3px]">
-      <div className="h-px bg-ink" />
-      <div className="h-[2px] bg-ink" />
-      <div className="h-px bg-ink" />
-    </div>
-  );
-}
-
-export function CornerFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative p-6">
-      <span className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-ink" />
-      <span className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-ink" />
-      <span className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-ink" />
-      <span className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-ink" />
-      {children}
-    </div>
-  );
-}
-
-export function Sunburst({ size = 60 }: { size?: number }) {
-  const rays = 16;
-  const items = Array.from({ length: rays });
+/** A quiet hairline divider with a small champagne diamond. */
+export function Rule({ className }: Props) {
   return (
     <div
-      className="relative inline-block"
-      style={{ width: size, height: size }}
+      className={`flex items-center justify-center gap-3 ${className ?? ""}`}
+      aria-hidden
     >
-      {items.map((_, i) => (
+      <span className="h-px w-12 bg-hairline" />
+      <span className="h-1 w-1 rotate-45 bg-champagne-deep" />
+      <span className="h-px w-12 bg-hairline" />
+    </div>
+  );
+}
+
+/** Fine black filigree scrolls for the four corners of a B&W frame.
+    Place inside a relatively-positioned element. */
+export function CornerScrolls() {
+  const corners = [
+    "top-0 left-0 rotate-0",
+    "top-0 right-0 rotate-90",
+    "bottom-0 right-0 rotate-180",
+    "bottom-0 left-0 -rotate-90",
+  ];
+  return (
+    <>
+      {corners.map((c, i) => (
         <span
           key={i}
-          className="absolute left-1/2 top-1/2 bg-burnt origin-bottom"
-          style={{
-            width: 1.5,
-            height: size / 2,
-            transform: `translate(-50%, -100%) rotate(${(360 / rays) * i}deg)`,
-            transformOrigin: "50% 100%",
-          }}
-        />
+          className={`pointer-events-none absolute z-[2] text-ink ${c}`}
+        >
+          <svg viewBox="0 0 48 48" className="w-10 h-10" fill="none" aria-hidden>
+            <g
+              stroke="currentColor"
+              strokeWidth="0.9"
+              strokeLinecap="round"
+              fill="none"
+            >
+              <path d="M4 18 C4 9 9 4 18 4" />
+              <path d="M18 4 c7 0 7 9 0 9 c-5 0 -5 -7 1.5 -7" />
+              <path d="M4 18 c0 7 9 7 9 0 c0 -5 -7 -5 -7 1.5" />
+              <path d="M12.5 12.5 c-3.5 -3 -9 -1 -9 3.5" />
+              <path d="M12.5 12.5 c-3 -3.5 -1 -9 3.5 -9" />
+            </g>
+            <circle cx="18" cy="7.5" r="0.8" fill="currentColor" />
+            <circle cx="7.5" cy="18" r="0.8" fill="currentColor" />
+          </svg>
+        </span>
       ))}
-      <span
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-burnt"
-        style={{ width: size * 0.18, height: size * 0.18 }}
-      />
-    </div>
+    </>
   );
 }

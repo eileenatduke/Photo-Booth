@@ -36,8 +36,9 @@ export async function applyFilter(
 
   if (id === "bw") {
     for (let i = 0; i < data.length; i += 4) {
-      const gray =
-        data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      let gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      // punchier contrast with lighter whites
+      gray = clamp((gray - 128) * 1.45 + 128 + 14);
       data[i] = data[i + 1] = data[i + 2] = gray;
     }
   } else if (id === "sepia") {
@@ -60,8 +61,8 @@ export async function applyFilter(
       data[i + 2] = clamp(b * 0.65 + gray * 0.35 - 12);
     }
   } else if (id === "color-pop") {
-    const s = 1.45;
-    const c = 1.15;
+    const s = 1.3;
+    const c = 1.12;
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i],
         g = data[i + 1],
@@ -73,6 +74,9 @@ export async function applyFilter(
       r = (r - 128) * c + 128;
       g = (g - 128) * c + 128;
       b = (b - 128) * c + 128;
+      // cool it slightly so it reads less orange
+      r *= 0.95;
+      b *= 1.05;
       data[i] = clamp(r);
       data[i + 1] = clamp(g);
       data[i + 2] = clamp(b);

@@ -1,6 +1,6 @@
 import { useSession } from "../state/session";
 import type { Step } from "../types";
-import { MastheadRule } from "./Ornaments";
+import { Rule } from "./Ornaments";
 
 const ORDER: Step[] = [
   "layout",
@@ -15,81 +15,61 @@ const LABEL: Record<Step, string> = {
   welcome: "Welcome",
   layout: "Layout",
   background: "Backdrop",
-  camera: "Capture",
-  capturing: "Capture",
+  camera: "Sitting",
+  capturing: "Sitting",
   review: "Review",
-  filter: "Develop",
+  filter: "Finish",
   output: "Print",
 };
-
-const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
 type Props = {
   title: string;
   subtitle?: string;
   onBack?: () => void;
-  ornament?: string;
 };
 
-export function StepHeader({ title, subtitle, onBack, ornament }: Props) {
+export function StepHeader({ title, subtitle, onBack }: Props) {
   const step = useSession((s) => s.step);
   const idx = ORDER.indexOf(step === "capturing" ? "camera" : step);
 
   return (
-    <header className="px-10 pt-8 pb-5">
-      <MastheadRule />
-      <div className="flex items-center justify-between py-3">
+    <header className="px-2 pt-2 pb-4">
+      <div className="flex items-center justify-between gap-4">
         <button
-          className="text-[11px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors disabled:opacity-0"
+          className="btn-ghost text-xs disabled:opacity-0"
           onClick={onBack}
           disabled={!onBack}
         >
-          ← Back
+          &larr; Back
         </button>
-        <div className="flex items-center gap-3">
-          {ORDER.map((s, i) => {
-            const active = i <= idx;
-            return (
-              <div
-                key={s}
-                className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em]"
-              >
-                <span
-                  className={
-                    "font-serif text-xs " +
-                    (active ? "text-burnt" : "text-hairline")
-                  }
-                >
-                  {ROMAN[i]}
-                </span>
-                <span className={active ? "text-ink" : "text-hairline"}>
-                  {LABEL[s]}
-                </span>
-                {i < ORDER.length - 1 && (
-                  <span className="text-hairline mx-1">·</span>
-                )}
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          {ORDER.map((s, i) => (
+            <span
+              key={s}
+              title={LABEL[s]}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === idx
+                  ? "w-6 bg-champagne-deep"
+                  : i < idx
+                    ? "w-1.5 bg-champagne"
+                    : "w-1.5 bg-hairline"
+              }`}
+            />
+          ))}
         </div>
-        <span className="text-[11px] uppercase tracking-[0.28em] text-muted">
-          № {ROMAN[idx] || "—"}
+        <span className="smallcaps w-12 text-right">
+          {idx + 1} / {ORDER.length}
         </span>
       </div>
-      <MastheadRule />
 
-      <div className="flex items-end justify-between mt-6 gap-6">
-        <div>
-          <h2 className="heading-display text-5xl">{title}</h2>
-          {subtitle && (
-            <p className="mt-2 font-body italic text-ink-soft text-lg max-w-2xl">
-              {subtitle}
-            </p>
-          )}
-        </div>
-        {ornament && (
-          <span className="ornament text-3xl select-none">{ornament}</span>
+      <div className="text-center mt-7">
+        <h2 className="heading-display text-4xl sm:text-5xl">{title}</h2>
+        {subtitle && (
+          <p className="font-body text-lg text-ink-soft mt-2 max-w-xl mx-auto">
+            {subtitle}
+          </p>
         )}
+        <Rule className="mt-5" />
       </div>
     </header>
   );

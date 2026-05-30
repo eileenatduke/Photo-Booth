@@ -13,16 +13,16 @@ export function CountdownOverlay({ value }: Props) {
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div className="relative">
         <span
-          className="absolute inset-0 -m-12 rounded-full border-2 border-burnt/60"
+          className="absolute inset-0 -m-12 rounded-full border border-paper/50"
           aria-hidden
         />
         <span
-          className="absolute inset-0 -m-8 rounded-full border border-burnt/40"
+          className="absolute inset-0 -m-8 rounded-full border border-paper/30"
           aria-hidden
         />
         <div
           key={value}
-          className="font-serif text-cream text-[18rem] leading-none drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)] animate-[count_900ms_ease-out_forwards]"
+          className="font-serif text-paper text-[18rem] leading-none drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)] animate-[count_900ms_ease-out_forwards]"
         >
           {value}
         </div>

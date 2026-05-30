@@ -1,5 +1,14 @@
 import type { CapturedShot, LayoutDef } from "../types";
 
+export type ComposeOptions = {
+  note?: string;
+  baseColor?: string;
+};
+
+// A cute handwriting face for the strip caption (system fonts on macOS).
+const CUTE_FONT = '"Bradley Hand", "Snell Roundhand", "Comic Sans MS", cursive';
+const CAPTION_INK = "#3A332B";
+
 export async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -51,11 +60,30 @@ function roundRect(
   ctx.closePath();
 }
 
+function drawNote(
+  ctx: CanvasRenderingContext2D,
+  note: string,
+  cx: number,
+  cy: number,
+  size: number,
+) {
+  const text = (note ?? "").trim();
+  if (!text) return;
+  ctx.fillStyle = CAPTION_INK;
+  ctx.font = `${size}px ${CUTE_FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, cx, cy);
+}
+
 export async function compose(
   shots: CapturedShot[],
   layout: LayoutDef,
+  opts: ComposeOptions = {},
 ): Promise<string> {
   const { width, height } = layout.outputSize;
+  const baseColor = opts.baseColor ?? "#FFFFFF";
+  const note = opts.note ?? "";
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -66,13 +94,13 @@ export async function compose(
 
   switch (layout.id) {
     case "classic-strip":
-      drawClassicStrip(ctx, images, width, height);
+      drawClassicStrip(ctx, images, width, height, baseColor, note);
       break;
     case "grid-2x2":
-      drawGrid2x2(ctx, images, width, height);
+      drawGrid2x2(ctx, images, width, height, baseColor);
       break;
     case "polaroid":
-      drawPolaroid(ctx, images, width, height);
+      drawPolaroid(ctx, images, width, height, baseColor, note);
       break;
     case "film-strip":
       drawFilmStrip(ctx, images, width, height);
@@ -81,7 +109,7 @@ export async function compose(
       drawMagazine(ctx, images, width, height);
       break;
     case "comic":
-      drawComic(ctx, images, width, height);
+      drawComic(ctx, images, width, height, baseColor);
       break;
   }
 
@@ -93,8 +121,10 @@ function drawClassicStrip(
   imgs: HTMLImageElement[],
   W: number,
   H: number,
+  baseColor: string,
+  note: string,
 ) {
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, W, H);
   const pad = Math.round(W * 0.05);
   const gap = Math.round(W * 0.025);
@@ -106,11 +136,7 @@ function drawClassicStrip(
     const y = pad + i * (slotH + gap);
     drawCover(ctx, img, pad, y, innerW, slotH);
   });
-  ctx.fillStyle = "#2A1F12";
-  ctx.font = `italic 500 ${Math.round(caption * 0.34)}px 'DM Serif Display', Georgia, serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("photo booth", W / 2, H - pad - caption / 2);
+  drawNote(ctx, note, W / 2, H - pad - caption / 2, Math.round(caption * 0.4));
 }
 
 function drawGrid2x2(
@@ -118,8 +144,9 @@ function drawGrid2x2(
   imgs: HTMLImageElement[],
   W: number,
   H: number,
+  baseColor: string,
 ) {
-  ctx.fillStyle = "#F5EEDC";
+  ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, W, H);
   const pad = Math.round(W * 0.04);
   const gap = Math.round(W * 0.015);
@@ -142,19 +169,17 @@ function drawPolaroid(
   imgs: HTMLImageElement[],
   W: number,
   H: number,
+  baseColor: string,
+  note: string,
 ) {
-  ctx.fillStyle = "#F5EEDC";
+  ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, W, H);
   const borderX = Math.round(W * 0.08);
   const borderTop = Math.round(W * 0.08);
   const photoSize = W - borderX * 2;
   drawCover(ctx, imgs[0], borderX, borderTop, photoSize, photoSize);
-  ctx.fillStyle = "#2A1F12";
-  ctx.font = `400 ${Math.round(W * 0.05)}px 'DM Serif Display', Georgia, serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
   const captionY = borderTop + photoSize + (H - borderTop - photoSize) / 2;
-  ctx.fillText("a moment", W / 2, captionY);
+  drawNote(ctx, note, W / 2, captionY, Math.round(W * 0.06));
 }
 
 function drawFilmStrip(
@@ -208,7 +233,11 @@ function drawMagazine(
   ctx.textBaseline = "top";
   ctx.fillText("BOOTH", Math.round(W * 0.05), Math.round(H * 0.04));
   ctx.font = `500 ${Math.round(W * 0.025)}px Inter, sans-serif`;
-  ctx.fillText("THE QUARTERLY · ISSUE №1", Math.round(W * 0.05), Math.round(H * 0.16));
+  ctx.fillText(
+    "THE QUARTERLY · ISSUE №1",
+    Math.round(W * 0.05),
+    Math.round(H * 0.16),
+  );
   ctx.font = `500 ${Math.round(W * 0.04)}px Inter, sans-serif`;
   ctx.textAlign = "right";
   ctx.fillText("$9.99 USD", W - Math.round(W * 0.05), Math.round(H * 0.04));
@@ -232,8 +261,9 @@ function drawComic(
   imgs: HTMLImageElement[],
   W: number,
   H: number,
+  baseColor: string,
 ) {
-  ctx.fillStyle = "#F5EEDC";
+  ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, W, H);
   const border = Math.round(W * 0.018);
   const outer = Math.round(W * 0.04);

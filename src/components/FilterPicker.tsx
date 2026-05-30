@@ -1,59 +1,67 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { FILTERS, applyFilter } from "../filters";
-import { useSession } from "../state/session";
+import { compose } from "../lib/compose";
+import { getLayout } from "../layouts";
+import { useSession, STRIP_COLORS } from "../state/session";
 import { StepHeader } from "./StepHeader";
-import type { FilterId } from "../types";
+
+const CUTE_FONT = '"Bradley Hand", "Snell Roundhand", "Comic Sans MS", cursive';
+const NOTE_LIMIT = 30;
 
 export function FilterPicker() {
   const {
-    composedDataUrl,
+    shots,
+    layoutId,
     filterId,
     setFilterId,
+    note,
+    setNote,
+    stripColor,
+    setStripColor,
     setFiltered,
     setStep,
   } = useSession(
     useShallow((s) => ({
-      composedDataUrl: s.composedDataUrl,
+      shots: s.shots,
+      layoutId: s.layoutId,
       filterId: s.filterId,
       setFilterId: s.setFilterId,
+      note: s.note,
+      setNote: s.setNote,
+      stripColor: s.stripColor,
+      setStripColor: s.setStripColor,
       setFiltered: s.setFiltered,
       setStep: s.setStep,
     })),
   );
 
-  const [previews, setPreviews] = useState<Record<FilterId, string>>(
-    {} as Record<FilterId, string>,
-  );
   const [livePreview, setLivePreview] = useState<string | null>(null);
   const seq = useRef(0);
 
-  const thumbSource = useMemo(() => composedDataUrl, [composedDataUrl]);
-
   useEffect(() => {
-    if (!thumbSource) return;
+    if (!layoutId || shots.length === 0) return;
+    const id = ++seq.current;
     let cancelled = false;
     (async () => {
-      const next: Record<FilterId, string> = {} as Record<FilterId, string>;
-      for (const f of FILTERS) {
-        const url = await applyFilter(thumbSource, f.id);
-        if (cancelled) return;
-        next[f.id] = url;
-      }
-      if (!cancelled) setPreviews(next);
+      // Apply the finish to the photos only, then lay them onto the
+      // (unfiltered) coloured strip with the note.
+      const finishedShots = await Promise.all(
+        shots.map(async (s) => ({
+          ...s,
+          dataUrl: await applyFilter(s.dataUrl, filterId),
+        })),
+      );
+      const composed = await compose(finishedShots, getLayout(layoutId), {
+        note,
+        baseColor: stripColor,
+      });
+      if (!cancelled && seq.current === id) setLivePreview(composed);
     })();
     return () => {
       cancelled = true;
     };
-  }, [thumbSource]);
-
-  useEffect(() => {
-    if (!composedDataUrl) return;
-    const id = ++seq.current;
-    applyFilter(composedDataUrl, filterId).then((url) => {
-      if (seq.current === id) setLivePreview(url);
-    });
-  }, [filterId, composedDataUrl]);
+  }, [shots, layoutId, note, stripColor, filterId]);
 
   function handleContinue() {
     setFiltered(livePreview);
@@ -61,65 +69,101 @@ export function FilterPicker() {
   }
 
   return (
-    <div className="min-h-full flex flex-col">
+    <div className="flex-1 flex flex-col fade-in">
       <StepHeader
-        title="The darkroom"
-        subtitle="Pick a treatment. Try a few — switching is free."
+        title="Add a Finish"
+        subtitle="Make it yours — a note, a colour, and a timeless tone."
         onBack={() => setStep("review")}
-        ornament="❀"
       />
-      <div className="px-10 pb-10 flex-1 flex gap-8">
-        <div className="flex-1 flex items-center justify-center">
-          {livePreview && (
-            <div className="relative bg-paper p-4 shadow-lift rotate-[0.5deg]">
-              <img
-                src={livePreview}
-                alt="Preview"
-                className="max-h-[64vh] max-w-full block fade-in"
-              />
-            </div>
+
+      <div className="flex-1 px-2 pb-8 flex flex-col lg:flex-row items-start gap-10 max-w-4xl mx-auto w-full">
+        {/* The product: the finished strip, no frame, just a soft shadow */}
+        <div className="flex-1 w-full flex items-start justify-center py-2">
+          {livePreview ? (
+            <img
+              src={livePreview}
+              alt="Your strip"
+              className="max-h-[64vh] w-auto block rounded-[3px] shadow-lift fade-in"
+            />
+          ) : (
+            <div className="w-40 h-72 bg-cream animate-pulse rounded-[3px]" />
           )}
         </div>
-        <aside className="w-72 flex flex-col gap-3">
-          <p className="smallcaps mb-1">Treatments</p>
-          {FILTERS.map((f) => {
-            const selected = filterId === f.id;
-            return (
-              <button
-                key={f.id}
-                onClick={() => setFilterId(f.id)}
-                className={
-                  "flex items-center gap-3 p-2 rounded-xl border-2 transition-all text-left " +
-                  (selected
-                    ? "border-burnt bg-paper shadow-lift"
-                    : "border-hairline bg-paper/70 hover:bg-paper")
-                }
-              >
-                <div className="w-16 h-16 rounded overflow-hidden bg-hairline flex-shrink-0 border border-hairline">
-                  {previews[f.id] && (
-                    <img
-                      src={previews[f.id]}
-                      alt={f.name}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-serif text-lg leading-tight">{f.name}</p>
-                  <p className="text-xs text-muted italic font-body truncate">
-                    {f.description}
-                  </p>
-                </div>
-                {selected && <span className="text-burnt text-sm">●</span>}
-              </button>
-            );
-          })}
+
+        <aside className="w-full lg:w-80 flex flex-col gap-6">
+          {/* Note */}
+          <div>
+            <p className="smallcaps mb-2">Your note</p>
+            <input
+              type="text"
+              value={note}
+              maxLength={NOTE_LIMIT}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="write something cute…"
+              style={{ fontFamily: CUTE_FONT }}
+              className="w-full px-4 py-3 text-2xl rounded-lg bg-paper border border-hairline
+                         focus:border-champagne-deep focus:outline-none text-ink
+                         placeholder:text-muted/60"
+            />
+            <p className="text-[11px] text-muted text-right mt-1">
+              {note.length}/{NOTE_LIMIT}
+            </p>
+          </div>
+
+          {/* Strip colour */}
+          <div>
+            <p className="smallcaps mb-3">Strip colour</p>
+            <div className="flex gap-3">
+              {STRIP_COLORS.map((c) => {
+                const selected = stripColor === c.value;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setStripColor(c.value)}
+                    title={c.name}
+                    className={`h-10 w-10 rounded-full border transition-all ${
+                      selected
+                        ? "ring-2 ring-ink ring-offset-2 ring-offset-porcelain border-ink/20"
+                        : "border-hairline hover:border-ink/30"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Finish */}
+          <div>
+            <p className="smallcaps mb-3">Finish</p>
+            <div className="flex flex-col gap-2">
+              {FILTERS.map((f) => {
+                const selected = filterId === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilterId(f.id)}
+                    className={
+                      "px-4 py-2.5 rounded-lg border text-left transition-all bg-paper " +
+                      (selected
+                        ? "border-champagne-deep ring-1 ring-champagne-deep"
+                        : "border-hairline hover:border-champagne-deep")
+                    }
+                  >
+                    <span className="font-serif text-lg text-ink">{f.name}</span>
+                    <span className="placard ml-2">{f.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <button
-            className="btn-primary mt-auto"
+            className="btn-primary"
             disabled={!livePreview}
             onClick={handleContinue}
           >
-            Take it home →
+            Continue
           </button>
         </aside>
       </div>

@@ -10,6 +10,13 @@ import type {
 
 export const MAX_RETAKES_PER_SHOT = 2;
 
+export const STRIP_COLORS = [
+  { id: "white", name: "White", value: "#FFFFFF" },
+  { id: "blue", name: "Baby Blue", value: "#D8ECF8" },
+  { id: "pink", name: "Blush Pink", value: "#FBE4EC" },
+  { id: "teal", name: "Soft Teal", value: "#DCF2EE" },
+] as const;
+
 type SessionState = {
   step: Step;
   layoutId: LayoutId | null;
@@ -21,6 +28,8 @@ type SessionState = {
   composedDataUrl: string | null;
   filterId: FilterId;
   filteredDataUrl: string | null;
+  note: string;
+  stripColor: string;
 
   setStep: (step: Step) => void;
   setLayoutId: (id: LayoutId) => void;
@@ -34,6 +43,8 @@ type SessionState = {
   setComposed: (url: string | null) => void;
   setFilterId: (id: FilterId) => void;
   setFiltered: (url: string | null) => void;
+  setNote: (note: string) => void;
+  setStripColor: (color: string) => void;
   resetShots: () => void;
   reset: () => void;
 };
@@ -49,6 +60,8 @@ const initial = {
   composedDataUrl: null,
   filterId: "natural" as FilterId,
   filteredDataUrl: null,
+  note: "",
+  stripColor: STRIP_COLORS[0].value,
 };
 
 export const useSession = create<SessionState>((set) => ({
@@ -88,6 +101,8 @@ export const useSession = create<SessionState>((set) => ({
   setComposed: (composedDataUrl) => set({ composedDataUrl }),
   setFilterId: (filterId) => set({ filterId }),
   setFiltered: (filteredDataUrl) => set({ filteredDataUrl }),
+  setNote: (note) => set({ note }),
+  setStripColor: (stripColor) => set({ stripColor }),
   resetShots: () =>
     set({
       shots: [],

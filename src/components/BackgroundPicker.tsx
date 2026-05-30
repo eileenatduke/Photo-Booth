@@ -3,7 +3,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
 import { BACKGROUND_PRESETS, renderPresetThumb } from "../lib/backgrounds";
 import { StepHeader } from "./StepHeader";
-import { Divider } from "./Ornaments";
 
 export function BackgroundPicker() {
   const { bgMode, bgSource, setBgMode, setBgSource, setStep } = useSession(
@@ -52,113 +51,112 @@ export function BackgroundPicker() {
   const canContinue = bgMode === "real" || !!bgSource;
 
   return (
-    <div className="min-h-full flex flex-col">
+    <div className="flex-1 flex flex-col fade-in">
       <StepHeader
-        title="The backdrop"
+        title="Set the Scene"
         subtitle="Keep the room you're in, or step somewhere else entirely."
         onBack={() => setStep("layout")}
-        ornament="✦"
       />
 
-      <div className="px-10 grid grid-cols-2 gap-4 my-4">
-        <ModeCard
-          active={bgMode === "real"}
-          title="Use the room"
-          tagline="Your real background, untouched."
-          glyph="❖"
-          onClick={() => setBgMode("real")}
-        />
-        <ModeCard
-          active={bgMode === "replace"}
-          title="Step elsewhere"
-          tagline="A new backdrop, drawn around your silhouette."
-          glyph="❀"
-          onClick={() => setBgMode("replace")}
-        />
+      <div className="flex-1 px-2 pb-4">
+        <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto mb-2">
+          <ModeCard
+            active={bgMode === "real"}
+            title="Use the Room"
+            tagline="Your real background, untouched."
+            onClick={() => setBgMode("real")}
+          />
+          <ModeCard
+            active={bgMode === "replace"}
+            title="Step Elsewhere"
+            tagline="A new backdrop, drawn around your silhouette."
+            onClick={() => setBgMode("replace")}
+          />
+        </div>
+
+        {bgMode === "replace" && (
+          <div className="max-w-3xl mx-auto mt-8">
+            <p className="smallcaps text-center mb-5">Choose your scene</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
+              {thumbs.map((p) => {
+                const selected =
+                  bgSource?.kind === "preset" && bgSource.id === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setBgSource({ kind: "preset", id: p.id })}
+                    className={`frame frame-hover ${
+                      selected ? "frame-selected" : ""
+                    }`}
+                  >
+                    <div className="matte p-1.5">
+                      <img
+                        src={p.thumb}
+                        alt={p.name}
+                        className="w-full aspect-[3/2] object-cover rounded-[1px]"
+                      />
+                      <p className="placard text-center mt-1.5">{p.name}</p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              <label
+                className={`frame frame-hover cursor-pointer ${
+                  bgSource?.kind === "custom" ? "frame-selected" : ""
+                }`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUpload}
+                />
+                <div className="matte p-1.5">
+                  {bgSource?.kind === "custom" ? (
+                    <img
+                      src={bgSource.dataUrl}
+                      alt="Custom"
+                      className="w-full aspect-[3/2] object-cover rounded-[1px]"
+                    />
+                  ) : (
+                    <div className="w-full aspect-[3/2] grid place-items-center bg-cream rounded-[1px] text-muted text-2xl font-serif">
+                      +
+                    </div>
+                  )}
+                  <p className="placard text-center mt-1.5">
+                    {bgSource?.kind === "custom" ? "Replace" : "Upload"}
+                  </p>
+                </div>
+              </label>
+            </div>
+            {uploadError && (
+              <p className="text-ink/70 text-xs mt-3 italic text-center">
+                {uploadError}
+              </p>
+            )}
+          </div>
+        )}
+
+        {bgMode === "real" && (
+          <div className="max-w-md mx-auto text-center py-10">
+            <p className="font-body text-xl text-ink-soft">
+              Your natural surroundings will be kept exactly as they are.
+            </p>
+          </div>
+        )}
       </div>
 
-      {bgMode === "replace" && (
-        <div className="px-10 pb-8 flex-1">
-          <div className="my-6">
-            <Divider glyph="❋" tone="sage" />
-          </div>
-          <p className="smallcaps text-center mb-4">Choose your scene</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-            {thumbs.map((p) => {
-              const selected =
-                bgSource?.kind === "preset" && bgSource.id === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setBgSource({ kind: "preset", id: p.id })}
-                  className={
-                    "group rounded-xl overflow-hidden border-2 transition-all bg-paper " +
-                    (selected
-                      ? "border-burnt shadow-lift"
-                      : "border-hairline hover:border-hairline-soft hover:shadow-soft")
-                  }
-                >
-                  <img
-                    src={p.thumb}
-                    alt={p.name}
-                    className="w-full aspect-[3/2] object-cover"
-                  />
-                  <div className="text-xs py-2 px-3 text-left flex items-center justify-between">
-                    <span className="font-serif text-base">{p.name}</span>
-                    {selected && (
-                      <span className="text-burnt text-xs">●</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-            <label
-              className={
-                "rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer transition-colors p-3 " +
-                (bgSource?.kind === "custom"
-                  ? "border-burnt bg-paper"
-                  : "border-hairline hover:border-burnt/40 bg-paper/60")
-              }
-            >
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUpload}
-              />
-              {bgSource?.kind === "custom" ? (
-                <>
-                  <img
-                    src={bgSource.dataUrl}
-                    alt="Custom"
-                    className="w-full aspect-[3/2] object-cover rounded-md mb-2"
-                  />
-                  <span className="smallcaps">Replace upload</span>
-                </>
-              ) : (
-                <>
-                  <span className="ornament text-2xl mb-1">＋</span>
-                  <span className="smallcaps">Upload your own</span>
-                </>
-              )}
-            </label>
-          </div>
-          {uploadError && (
-            <p className="text-burnt text-xs mt-3 italic">{uploadError}</p>
-          )}
-        </div>
-      )}
-
-      <div className="px-10 pb-10 flex justify-between mt-auto">
+      <div className="px-2 pb-8 flex justify-center gap-3">
         <button className="btn-secondary" onClick={() => setStep("layout")}>
-          ← Back
+          &larr; Back
         </button>
         <button
           className="btn-primary"
           disabled={!canContinue}
           onClick={() => setStep("camera")}
         >
-          To the camera →
+          Continue
         </button>
       </div>
     </div>
@@ -169,33 +167,25 @@ function ModeCard({
   active,
   title,
   tagline,
-  glyph,
   onClick,
 }: {
   active: boolean;
   title: string;
   tagline: string;
-  glyph: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={
-        "relative text-left px-6 py-5 rounded-2xl border-2 transition-all " +
-        (active
-          ? "border-burnt bg-paper shadow-lift"
-          : "border-hairline bg-paper/70 hover:bg-paper")
-      }
+      className={`relative text-left px-6 py-5 rounded-lg border bg-paper transition-all ${
+        active
+          ? "border-champagne-deep shadow-soft ring-1 ring-champagne-deep"
+          : "border-hairline hover:border-champagne-deep"
+      }`}
     >
-      <span className="ornament text-2xl block mb-2">{glyph}</span>
-      <p className="font-serif text-2xl">{title}</p>
-      <p className="font-body italic text-ink-soft text-base mt-1">
-        {tagline}
-      </p>
-      {active && (
-        <span className="absolute top-3 right-4 stamp">Chosen</span>
-      )}
+      <p className="font-serif text-2xl text-ink">{title}</p>
+      <p className="font-body text-base text-ink-soft mt-1">{tagline}</p>
+      {active && <span className="absolute top-3 right-4 stamp">Chosen</span>}
     </button>
   );
 }
