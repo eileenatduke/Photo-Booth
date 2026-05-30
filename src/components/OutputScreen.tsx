@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
-import { savePng } from "../lib/platform";
+import { saveImage } from "../lib/platform";
 import { Rule } from "./Ornaments";
 
 export function OutputScreen() {
@@ -20,9 +20,14 @@ export function OutputScreen() {
     setDownloadError(null);
     try {
       // Native save dialog on desktop, browser download on the web.
-      await savePng(filteredDataUrl, `photo-booth-${Date.now()}.png`);
-      setStatus("Downloaded ✓");
-      setTimeout(() => setStatus(null), 2400);
+      const { saved } = await saveImage(
+        filteredDataUrl,
+        `photo-booth-${Date.now()}.png`,
+      );
+      if (saved) {
+        setStatus("Downloaded ✓");
+        setTimeout(() => setStatus(null), 2400);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setDownloadError(msg || "Download failed.");
