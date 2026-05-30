@@ -1,5 +1,7 @@
 # Photo Booth
 
+# Vercel Link: https://photo-booth-two-pink.vercel.app/
+
 A desktop photo booth app. Pick a layout, snap a few shots with a countdown,
 apply a filter, then download or scan a QR code to grab the result on your
 phone. Sessions are ephemeral — nothing is saved or sent anywhere.
