@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { invoke } from "@tauri-apps/api/core";
-import { save } from "@tauri-apps/plugin-dialog";
 import { useSession } from "../state/session";
+import { savePng } from "../lib/platform";
 import { Rule } from "./Ornaments";
 
 export function OutputScreen() {
@@ -20,15 +19,8 @@ export function OutputScreen() {
     if (!filteredDataUrl) return;
     setDownloadError(null);
     try {
-      const path = await save({
-        defaultPath: `photo-booth-${Date.now()}.png`,
-        filters: [{ name: "PNG image", extensions: ["png"] }],
-      });
-      if (!path) return;
-      await invoke("save_png_to_path", {
-        path,
-        dataUrl: filteredDataUrl,
-      });
+      // Native save dialog on desktop, browser download on the web.
+      await savePng(filteredDataUrl, `photo-booth-${Date.now()}.png`);
       setStatus("Downloaded ✓");
       setTimeout(() => setStatus(null), 2400);
     } catch (e) {
