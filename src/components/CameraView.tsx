@@ -98,7 +98,20 @@ export function CameraView() {
       rafRef.current = requestAnimationFrame(renderLoop);
       return;
     }
-    if (video.readyState >= 2) {
+    if (video.readyState >= 2 && video.videoWidth > 0) {
+      // Size the canvas to the video's ACTUAL frame dimensions. On phones the
+      // reported track settings can be landscape while the real frame is
+      // portrait (or vice versa); using videoWidth/videoHeight keeps the draw
+      // 1:1 so the image is never stretched. CSS object-cover then crops it to
+      // the on-screen frame, just like a normal camera.
+      if (
+        canvas.width !== video.videoWidth ||
+        canvas.height !== video.videoHeight
+      ) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        dimsRef.current = { w: video.videoWidth, h: video.videoHeight };
+      }
       const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.save();
@@ -219,8 +232,14 @@ export function CameraView() {
       {/* Middle: the only non-black region — the photo itself, no border */}
       <div className="flex-1 flex flex-col items-center justify-center gap-7 px-4">
         <div
-          className="relative overflow-hidden bg-black h-[58vh] max-w-[92vw]"
-          style={{ aspectRatio: photoAspect }}
+          className="relative overflow-hidden bg-black"
+          style={{
+            aspectRatio: photoAspect,
+            // Fit within both the height and width budgets while keeping the
+            // photo's aspect ratio, so the frame looks right on phones too.
+            height: `min(58vh, calc(92vw / ${photoAspect}))`,
+            maxWidth: "92vw",
+          }}
         >
           <video ref={videoRef} className="hidden" muted playsInline />
           <canvas
