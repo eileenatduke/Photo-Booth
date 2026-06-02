@@ -4,10 +4,19 @@ import { FILTERS, applyFilter } from "../filters";
 import { compose } from "../lib/compose";
 import { getLayout } from "../layouts";
 import { useSession, STRIP_COLORS } from "../state/session";
+import type { LayoutId } from "../types";
 import { StepHeader } from "./StepHeader";
 
 const CUTE_FONT = '"Bradley Hand", "Snell Roundhand", "Comic Sans MS", cursive';
 const NOTE_LIMIT = 30;
+
+// Only the white-bordered strip & polaroid layouts carry a caption and let the
+// user pick a strip colour. Grid, film strip and comic are fixed designs.
+const CUSTOMIZABLE_LAYOUTS: LayoutId[] = [
+  "classic-strip",
+  "three-strip",
+  "polaroid",
+];
 
 export function FilterPicker() {
   const {
@@ -39,6 +48,9 @@ export function FilterPicker() {
   const [livePreview, setLivePreview] = useState<string | null>(null);
   const seq = useRef(0);
 
+  const customizable =
+    !!layoutId && CUSTOMIZABLE_LAYOUTS.includes(layoutId);
+
   useEffect(() => {
     if (!layoutId || shots.length === 0) return;
     const id = ++seq.current;
@@ -53,15 +65,15 @@ export function FilterPicker() {
         })),
       );
       const composed = await compose(finishedShots, getLayout(layoutId), {
-        note,
-        baseColor: stripColor,
+        note: customizable ? note : "",
+        baseColor: customizable ? stripColor : "#FFFFFF",
       });
       if (!cancelled && seq.current === id) setLivePreview(composed);
     })();
     return () => {
       cancelled = true;
     };
-  }, [shots, layoutId, note, stripColor, filterId]);
+  }, [shots, layoutId, note, stripColor, filterId, customizable]);
 
   function handleContinue() {
     setFiltered(livePreview);
@@ -72,7 +84,11 @@ export function FilterPicker() {
     <div className="flex-1 flex flex-col fade-in">
       <StepHeader
         title="Add a Finish"
-        subtitle="Make it yours — a note, a colour, and a timeless tone."
+        subtitle={
+          customizable
+            ? "Make it yours — a note, a colour, and a timeless tone."
+            : "Choose a timeless tone for your photos."
+        }
         onBack={() => setStep("review")}
       />
 
@@ -91,47 +107,51 @@ export function FilterPicker() {
         </div>
 
         <aside className="w-full lg:w-80 flex flex-col gap-6">
-          {/* Note */}
-          <div>
-            <p className="smallcaps mb-2">Your note</p>
-            <input
-              type="text"
-              value={note}
-              maxLength={NOTE_LIMIT}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="write something cute…"
-              style={{ fontFamily: CUTE_FONT }}
-              className="w-full px-4 py-3 text-2xl rounded-lg bg-paper border border-hairline
-                         focus:border-champagne-deep focus:outline-none text-ink
-                         placeholder:text-muted/60"
-            />
-            <p className="text-[11px] text-muted text-right mt-1">
-              {note.length}/{NOTE_LIMIT}
-            </p>
-          </div>
+          {customizable && (
+            <>
+              {/* Note */}
+              <div>
+                <p className="smallcaps mb-2">Your note</p>
+                <input
+                  type="text"
+                  value={note}
+                  maxLength={NOTE_LIMIT}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="write something cute…"
+                  style={{ fontFamily: CUTE_FONT }}
+                  className="w-full px-4 py-3 text-2xl rounded-lg bg-paper border border-hairline
+                             focus:border-champagne-deep focus:outline-none text-ink
+                             placeholder:text-muted/60"
+                />
+                <p className="text-[11px] text-muted text-right mt-1">
+                  {note.length}/{NOTE_LIMIT}
+                </p>
+              </div>
 
-          {/* Strip colour */}
-          <div>
-            <p className="smallcaps mb-3">Strip colour</p>
-            <div className="flex gap-3">
-              {STRIP_COLORS.map((c) => {
-                const selected = stripColor === c.value;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setStripColor(c.value)}
-                    title={c.name}
-                    className={`h-10 w-10 rounded-full border transition-all ${
-                      selected
-                        ? "ring-2 ring-ink ring-offset-2 ring-offset-porcelain border-ink/20"
-                        : "border-hairline hover:border-ink/30"
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                  />
-                );
-              })}
-            </div>
-          </div>
+              {/* Strip colour */}
+              <div>
+                <p className="smallcaps mb-3">Strip colour</p>
+                <div className="flex gap-3">
+                  {STRIP_COLORS.map((c) => {
+                    const selected = stripColor === c.value;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => setStripColor(c.value)}
+                        title={c.name}
+                        className={`h-10 w-10 rounded-full border transition-all ${
+                          selected
+                            ? "ring-2 ring-ink ring-offset-2 ring-offset-porcelain border-ink/20"
+                            : "border-hairline hover:border-ink/30"
+                        }`}
+                        style={{ backgroundColor: c.value }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Finish */}
           <div>

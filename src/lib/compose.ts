@@ -94,6 +94,7 @@ export async function compose(
 
   switch (layout.id) {
     case "classic-strip":
+    case "three-strip":
       drawClassicStrip(ctx, images, width, height, baseColor, note);
       break;
     case "grid-2x2":
@@ -104,9 +105,6 @@ export async function compose(
       break;
     case "film-strip":
       drawFilmStrip(ctx, images, width, height);
-      break;
-    case "magazine":
-      drawMagazine(ctx, images, width, height);
       break;
     case "comic":
       drawComic(ctx, images, width, height, baseColor);
@@ -212,47 +210,6 @@ function drawFilmStrip(
     ctx.beginPath();
     ctx.arc(x, holeY2, holeR, 0, Math.PI * 2);
     ctx.fill();
-  }
-}
-
-function drawMagazine(
-  ctx: CanvasRenderingContext2D,
-  imgs: HTMLImageElement[],
-  W: number,
-  H: number,
-) {
-  drawCover(ctx, imgs[0], 0, 0, W, H);
-  const grad = ctx.createLinearGradient(0, 0, 0, Math.round(H * 0.22));
-  grad.addColorStop(0, "rgba(0,0,0,0.55)");
-  grad.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, Math.round(H * 0.22));
-  ctx.fillStyle = "#F5EEDC";
-  ctx.font = `400 ${Math.round(W * 0.14)}px 'DM Serif Display', Georgia, serif`;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText("BOOTH", Math.round(W * 0.05), Math.round(H * 0.04));
-  ctx.font = `500 ${Math.round(W * 0.025)}px Inter, sans-serif`;
-  ctx.fillText(
-    "THE QUARTERLY · ISSUE №1",
-    Math.round(W * 0.05),
-    Math.round(H * 0.16),
-  );
-  ctx.font = `500 ${Math.round(W * 0.04)}px Inter, sans-serif`;
-  ctx.textAlign = "right";
-  ctx.fillText("$9.99 USD", W - Math.round(W * 0.05), Math.round(H * 0.04));
-  const barX = W - Math.round(W * 0.22);
-  const barY = H - Math.round(H * 0.08);
-  const barW = Math.round(W * 0.18);
-  const barH = Math.round(H * 0.04);
-  ctx.fillStyle = "#F5EEDC";
-  ctx.fillRect(barX - 6, barY - 6, barW + 12, barH + 12);
-  ctx.fillStyle = "#1B130A";
-  let bx = barX;
-  while (bx < barX + barW) {
-    const wd = 1 + Math.floor(Math.random() * 4);
-    ctx.fillRect(bx, barY, wd, barH);
-    bx += wd + 1 + Math.floor(Math.random() * 3);
   }
 }
 

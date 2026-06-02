@@ -1,7 +1,6 @@
 import { useSession } from "./state/session";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { LayoutPicker } from "./components/LayoutPicker";
-import { BackgroundPicker } from "./components/BackgroundPicker";
 import { CameraView } from "./components/CameraView";
 import { ReviewScreen } from "./components/ReviewScreen";
 import { FilterPicker } from "./components/FilterPicker";
@@ -15,7 +14,6 @@ export default function App() {
         <div className="relative flex-1 flex flex-col">
           {step === "welcome" && <WelcomeScreen />}
           {step === "layout" && <LayoutPicker />}
-          {step === "background" && <BackgroundPicker />}
           {(step === "camera" || step === "capturing") && <CameraView />}
           {step === "review" && <ReviewScreen />}
           {step === "filter" && <FilterPicker />}

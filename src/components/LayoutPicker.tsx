@@ -59,7 +59,7 @@ export function LayoutPicker() {
         <button
           className="btn-primary"
           disabled={!layoutId}
-          onClick={() => setStep("background")}
+          onClick={() => setStep("camera")}
         >
           Continue
         </button>
@@ -100,11 +100,12 @@ function LayoutPreview({ id }: { id: string }) {
           ))}
         </div>
       );
-    case "magazine":
+    case "three-strip":
       return (
-        <div className="relative bg-ink/40 mx-auto w-16 aspect-[3/4] overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-paper/80" />
-          <div className="absolute bottom-1 right-1 w-5 h-2 bg-paper/80" />
+        <div className="bg-paper border border-hairline aspect-[1/3] mx-auto w-12 rounded-sm flex flex-col gap-[2px] p-[3px]">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex-1 bg-ink/10" />
+          ))}
         </div>
       );
     case "comic":

@@ -34,12 +34,12 @@ export const LAYOUTS: LayoutDef[] = [
     outputSize: { width: 2400, height: 900 },
   },
   {
-    id: "magazine",
-    name: "Magazine Cover",
-    shots: 1,
-    shotAspect: 3 / 4,
-    description: "Portrait shot with masthead and faux barcode.",
-    outputSize: { width: 1200, height: 1600 },
+    id: "three-strip",
+    name: "Classic 3-Strip",
+    shots: 3,
+    shotAspect: 4 / 3,
+    description: "Vertical strip, three photos, white border, caption space.",
+    outputSize: { width: 720, height: 1680 },
   },
   {
     id: "comic",

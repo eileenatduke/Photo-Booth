@@ -3,8 +3,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useSession } from "../state/session";
 import { getLayout } from "../layouts";
 import { openCamera, stopCamera, unmirrorFrame } from "../lib/camera";
-import { compositeFrame } from "../lib/segmentation";
-import { renderPresetToCanvas } from "../lib/backgrounds";
 import { CountdownOverlay } from "./CountdownOverlay";
 import type { CapturedShot } from "../types";
 
@@ -17,8 +15,6 @@ const PREVIEW_MS = 1000;
 export function CameraView() {
   const {
     layoutId,
-    bgMode,
-    bgSource,
     setShots,
     replaceShot,
     incShotRetake,
@@ -28,8 +24,6 @@ export function CameraView() {
   } = useSession(
     useShallow((s) => ({
       layoutId: s.layoutId,
-      bgMode: s.bgMode,
-      bgSource: s.bgSource,
       setShots: s.setShots,
       replaceShot: s.replaceShot,
       incShotRetake: s.incShotRetake,
@@ -53,9 +47,6 @@ export function CameraView() {
   const streamRef = useRef<MediaStream | null>(null);
   const dimsRef = useRef<{ w: number; h: number }>({ w: 1280, h: 720 });
   const rafRef = useRef<number | null>(null);
-  const backgroundRef = useRef<HTMLImageElement | HTMLCanvasElement | null>(
-    null,
-  );
 
   const [phase, setPhase] = useState<Phase>("init");
   const [countdownValue, setCountdownValue] = useState<
@@ -100,24 +91,7 @@ export function CameraView() {
     };
   }, []);
 
-  useEffect(() => {
-    if (bgMode === "real" || !bgSource) {
-      backgroundRef.current = null;
-      return;
-    }
-    const { w, h } = dimsRef.current;
-    if (bgSource.kind === "preset") {
-      backgroundRef.current = renderPresetToCanvas(bgSource.id, w, h);
-    } else {
-      const img = new Image();
-      img.onload = () => {
-        backgroundRef.current = img;
-      };
-      img.src = bgSource.dataUrl;
-    }
-  }, [bgMode, bgSource]);
-
-  const renderLoop = useCallback(async () => {
+  const renderLoop = useCallback(() => {
     const video = videoRef.current;
     const canvas = previewCanvasRef.current;
     if (!video || !canvas) {
@@ -125,25 +99,16 @@ export function CameraView() {
       return;
     }
     if (video.readyState >= 2) {
-      try {
-        await compositeFrame({
-          video,
-          output: canvas,
-          background: bgMode === "replace" ? backgroundRef.current : null,
-          mirror: true,
-        });
-      } catch (e) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.save();
-          ctx.scale(-1, 1);
-          ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-          ctx.restore();
-        }
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
     }
     rafRef.current = requestAnimationFrame(renderLoop);
-  }, [bgMode]);
+  }, []);
 
   useEffect(() => {
     if (phase === "init") return;
@@ -221,7 +186,7 @@ export function CameraView() {
         <p className="text-white/70 max-w-md">{error}</p>
         <button
           className="mt-8 px-6 py-3 rounded-full bg-white text-black text-sm"
-          onClick={() => setStep("background")}
+          onClick={() => setStep("layout")}
         >
           Go back
         </button>
@@ -239,7 +204,7 @@ export function CameraView() {
           <button
             onClick={() => {
               clearRetakeQueue();
-              setStep(isRetake ? "review" : "background");
+              setStep(isRetake ? "review" : "layout");
             }}
             className="absolute left-6 top-6 text-white/60 hover:text-white text-[11px] uppercase tracking-[0.3em]"
           >

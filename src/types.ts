@@ -1,7 +1,6 @@
 export type Step =
   | "welcome"
   | "layout"
-  | "background"
   | "camera"
   | "capturing"
   | "review"
@@ -13,7 +12,7 @@ export type LayoutId =
   | "grid-2x2"
   | "polaroid"
   | "film-strip"
-  | "magazine"
+  | "three-strip"
   | "comic";
 
 export type FilterId =
@@ -22,13 +21,6 @@ export type FilterId =
   | "sepia"
   | "vintage"
   | "color-pop";
-
-export type BackgroundMode = "real" | "replace";
-
-export type BackgroundSource =
-  | { kind: "preset"; id: string }
-  | { kind: "custom"; dataUrl: string }
-  | null;
 
 export type LayoutDef = {
   id: LayoutId;
@@ -43,12 +35,6 @@ export type FilterDef = {
   id: FilterId;
   name: string;
   description: string;
-};
-
-export type BackgroundPreset = {
-  id: string;
-  name: string;
-  paint: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
 };
 
 export type CapturedShot = {

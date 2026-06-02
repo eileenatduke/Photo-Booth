@@ -2,19 +2,11 @@ import { useSession } from "../state/session";
 import type { Step } from "../types";
 import { Rule } from "./Ornaments";
 
-const ORDER: Step[] = [
-  "layout",
-  "background",
-  "camera",
-  "review",
-  "filter",
-  "output",
-];
+const ORDER: Step[] = ["layout", "camera", "review", "filter", "output"];
 
 const LABEL: Record<Step, string> = {
   welcome: "Welcome",
   layout: "Layout",
-  background: "Backdrop",
   camera: "Sitting",
   capturing: "Sitting",
   review: "Review",

@@ -1,27 +1,18 @@
 import { create } from "zustand";
-import type {
-  Step,
-  LayoutId,
-  FilterId,
-  BackgroundMode,
-  BackgroundSource,
-  CapturedShot,
-} from "../types";
+import type { Step, LayoutId, FilterId, CapturedShot } from "../types";
 
 export const MAX_RETAKES_PER_SHOT = 2;
 
 export const STRIP_COLORS = [
   { id: "white", name: "White", value: "#FFFFFF" },
-  { id: "blue", name: "Baby Blue", value: "#D8ECF8" },
-  { id: "pink", name: "Blush Pink", value: "#FBE4EC" },
-  { id: "teal", name: "Soft Teal", value: "#DCF2EE" },
+  { id: "blue", name: "Light Blue", value: "#A9D5F0" },
+  { id: "pink", name: "Light Pink", value: "#F6C2D5" },
+  { id: "teal", name: "Light Teal", value: "#A8DFD2" },
 ] as const;
 
 type SessionState = {
   step: Step;
   layoutId: LayoutId | null;
-  bgMode: BackgroundMode;
-  bgSource: BackgroundSource;
   shots: CapturedShot[];
   shotRetakes: number[];
   retakeQueue: number[];
@@ -33,8 +24,6 @@ type SessionState = {
 
   setStep: (step: Step) => void;
   setLayoutId: (id: LayoutId) => void;
-  setBgMode: (mode: BackgroundMode) => void;
-  setBgSource: (src: BackgroundSource) => void;
   setShots: (shots: CapturedShot[]) => void;
   replaceShot: (index: number, shot: CapturedShot) => void;
   incShotRetake: (index: number) => void;
@@ -52,8 +41,6 @@ type SessionState = {
 const initial = {
   step: "welcome" as Step,
   layoutId: null,
-  bgMode: "real" as BackgroundMode,
-  bgSource: null,
   shots: [],
   shotRetakes: [],
   retakeQueue: [],
@@ -68,8 +55,6 @@ export const useSession = create<SessionState>((set) => ({
   ...initial,
   setStep: (step) => set({ step }),
   setLayoutId: (layoutId) => set({ layoutId }),
-  setBgMode: (bgMode) => set({ bgMode }),
-  setBgSource: (bgSource) => set({ bgSource }),
   setShots: (shots) =>
     set({
       shots,
