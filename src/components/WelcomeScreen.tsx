@@ -5,30 +5,55 @@ import { DecalsBackdrop } from "./DecalsBackdrop";
 export function WelcomeScreen() {
   const setStep = useSession((s) => s.setStep);
   return (
-    <div className="relative flex-1 flex flex-col items-center justify-center text-center px-6 py-16 fade-in">
+    // `container-type: size` turns this hero into a sizing context, so the
+    // decals and the text below can be sized in container units (cqw/cqh) and
+    // scale proportionally together on any screen — phone, resized window, or
+    // full-screen desktop.
+    <div
+      className="relative flex-1 flex flex-col items-center justify-center text-center px-6 py-10 fade-in"
+      style={{ containerType: "size" }}
+    >
       <DecalsBackdrop />
 
-      <div className="relative z-10 flex flex-col items-center mt-24 sm:mt-28">
-        <p className="smallcaps mb-6">Portrait Studio</p>
+      <div
+        className="relative z-10 flex flex-col items-center w-full max-w-full"
+        style={{ marginTop: "clamp(1.5rem, 7cqh, 5.5rem)" }}
+      >
+        <p
+          className="smallcaps mb-6"
+          style={{ fontSize: "clamp(0.6rem, 1.3cqw, 0.78rem)" }}
+        >
+          Portrait Studio
+        </p>
 
-        <h1 className="heading-display text-6xl sm:text-7xl md:text-8xl mb-4">
+        <h1
+          className="heading-display mb-4 max-w-full"
+          style={{ fontSize: "clamp(2rem, 8.6cqw, 5.6rem)" }}
+        >
           The Photo Booth
         </h1>
 
-        <p className="heading-script text-2xl sm:text-3xl text-ink-soft mb-8">
+        <p
+          className="heading-script text-ink-soft mb-8 max-w-full"
+          style={{ fontSize: "clamp(1.1rem, 2.9cqw, 1.9rem)" }}
+        >
           timeless portraits, beautifully composed
         </p>
 
         <Rule className="mb-8" />
 
-        <p className="font-body text-xl sm:text-2xl text-ink-soft max-w-md mb-10 leading-relaxed">
+        <p
+          className="font-body text-ink-soft max-w-[min(28rem,100%)] mb-10 leading-relaxed px-2"
+          style={{ fontSize: "clamp(1rem, 2.3cqw, 1.4rem)" }}
+        >
           Sit for a short series of portraits and take them home as a single,
           considered print.
         </p>
 
         <button
           onClick={() => setStep("layout")}
-          className="btn-primary text-base px-10 py-4"
+          className="btn-primary px-10 py-4"
+          style={{ fontSize: "clamp(0.9rem, 1.7cqw, 1rem)" }}
         >
           Begin
         </button>

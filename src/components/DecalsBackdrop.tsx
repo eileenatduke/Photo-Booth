@@ -144,7 +144,11 @@ export function DecalsBackdrop() {
                   : "relative rounded-[4px] bg-white p-[2px] shadow-[0_14px_36px_rgba(28,27,25,0.22)] ring-1 ring-black/5"
               }
               style={{
-                width: `clamp(${Math.round(d.w * 0.6)}px, ${(d.w / 9).toFixed(1)}vw, ${d.w}px)`,
+                // Width is a fraction of the hero container's width (cqw), so
+              // every piece scales proportionally on any screen size. The
+              // container caps at the layout's max width, so on very wide
+              // screens this settles at ~d.w px.
+              width: `${(d.w / 10.6).toFixed(2)}cqw`,
                 transform: `rotate(${d.rotate}deg) ${pop}`,
                 opacity: shown ? 1 : 0,
                 filter: d.bare
